@@ -2,11 +2,12 @@
 // Works with Stripe Managed Payments (Stripe as merchant of record) and ordinary Stripe Payment Links.
 // Deploy:  supabase functions deploy stripe-webhook --no-verify-jwt
 // Secrets: supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_123":"c1"}'
+//          STRIPE_WEBHOOK_SECRET_LIVE=whsec_... (optional second secret, so sandbox and live destinations both work)
 // In Stripe: Developers > Webhooks > Add endpoint https://<project>.supabase.co/functions/v1/stripe-webhook,
 // events checkout.session.completed and charge.refunded.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
-const SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
+const SECRETS = [Deno.env.get("STRIPE_WEBHOOK_SECRET"), Deno.env.get("STRIPE_WEBHOOK_SECRET_LIVE")].filter((s): s is string => !!s);
 const LINKS: Record<string, string> = JSON.parse(Deno.env.get("STRIPE_LINKS") ?? "{}");
 // Server-side key: the legacy service role key if the project still has one, else the new secret key.
 function serverKey(): string {
@@ -29,12 +30,16 @@ function same(a: string, b: string): boolean {
 }
 // Stripe-Signature: t=timestamp,v1=signature[,v1=...]; signed payload is "t.body"; reject anything older than 5 minutes.
 async function valid(body: string, header: string | null): Promise<boolean> {
-  if (!SECRET || !header) return false;
+  if (!SECRETS.length || !header) return false;
   const parts = Object.fromEntries(header.split(",").map((p) => p.split("=", 2)).filter((p) => p.length === 2)) as Record<string, string>;
   const t = Number(parts.t);
   if (!t || Math.abs(Date.now() / 1000 - t) > 300) return false;
-  const expected = await hmac(SECRET, `${t}.${body}`);
-  return header.split(",").filter((p) => p.startsWith("v1=")).some((p) => same(p.slice(3), expected));
+  const sigs = header.split(",").filter((p) => p.startsWith("v1=")).map((p) => p.slice(3));
+  for (const secret of SECRETS) {
+    const expected = await hmac(secret, `${t}.${body}`);
+    if (sigs.some((s) => same(s, expected))) return true;
+  }
+  return false;
 }
 
 Deno.serve(async (req) => {

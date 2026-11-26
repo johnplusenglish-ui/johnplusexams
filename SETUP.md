@@ -37,7 +37,7 @@ It can take from a few minutes to a few hours. HTTPS appears in GitHub Pages aft
 2. Create one product, one-off price (not recurring): "C1 Advanced Use of English (12 months)" EUR 15. Students and teachers buy the same pack.
 3. Create a **Payment Link** for it. Under After payment, choose "Don't show confirmation page" and redirect to `https://johnplusexams.com/app/?paid=1`. Turn on "Require customers to accept your terms of service", with the terms URL `https://johnplusexams.com/terms/` set in Stripe's public details. The terms say access starts straight away and the 14-day right to cancel ends, which is what makes "no refunds" valid in the EU.
 4. Put the payment link in `assets/config.js` under `checkout.c1`.
-5. Deploy the webhook: `supabase functions deploy stripe-webhook --no-verify-jwt`, then `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_...":"c1"}'` (the payment link's ID starts with plink_).
+5. Deploy the webhook: `supabase functions deploy stripe-webhook --no-verify-jwt`, then `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_...":"c1"}'` (the payment link's ID starts with plink_). The sandbox and the live account each have their own webhook destination and signing secret: the sandbox one goes in `STRIPE_WEBHOOK_SECRET`, the live one in `STRIPE_WEBHOOK_SECRET_LIVE`, and `STRIPE_LINKS` lists both payment links.
 6. Stripe, Developers, Webhooks: add endpoint `https://<project>.supabase.co/functions/v1/stripe-webhook`, events `checkout.session.completed` and `charge.refunded`. Its signing secret is the `whsec_` value above.
 
 ## 5. Contact email
