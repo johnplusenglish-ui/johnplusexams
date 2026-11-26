@@ -5,7 +5,7 @@
 create table if not exists entitlements (
   id bigint generated always as identity primary key,
   email text not null,
-  product text not null,              -- 'c1-student' or 'c1-teacher'
+  product text not null,              -- the pack, e.g. 'c1' (older 'c1-student' / 'c1-teacher' rows still count)
   expires_at timestamptz not null,
   order_id text unique,
   created_at timestamptz not null default now()
@@ -99,12 +99,11 @@ drop policy if exists "own mistakes" on mistakes;
 create policy "own mistakes" on mistakes for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid() and has_pack(split_part(paper_id, '-', 1)));
 
--- Private bucket for the PDFs. Folder = pack ('c1/c1-01-student.pdf'). Teacher PDFs need the teacher licence.
+-- Private bucket for the PDFs. Folder = pack ('c1/c1-01-student.pdf'). One pack price unlocks every PDF in it.
 insert into storage.buckets (id, name, public) values ('pdfs', 'pdfs', false) on conflict (id) do nothing;
 drop policy if exists "pdfs for buyers" on storage.objects;
 create policy "pdfs for buyers" on storage.objects for select to authenticated
   using (
     bucket_id = 'pdfs'
     and has_pack((storage.foldername(name))[1])
-    and (name not like '%-teacher.pdf' or has_teacher((storage.foldername(name))[1]))
   );

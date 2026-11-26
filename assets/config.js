@@ -4,7 +4,6 @@ window.JPX = {
   supabaseUrl: "https://xlwxlzvnkeuvbinushoa.supabase.co",
   supabaseAnonKey: "sb_publishable_okonSwF5-yoM3iPP2WIe_w_SiArcbnG",
   checkout: {
-    "c1-student": "",
-    "c1-teacher": ""
+    "c1": ""
   }
 };

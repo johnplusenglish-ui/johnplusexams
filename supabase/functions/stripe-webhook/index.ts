@@ -1,7 +1,7 @@
 // Stripe webhook: when a Checkout payment completes, give that email 12 months of the pack it bought.
 // Works with Stripe Managed Payments (Stripe as merchant of record) and ordinary Stripe Payment Links.
 // Deploy:  supabase functions deploy stripe-webhook --no-verify-jwt
-// Secrets: supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_123":"c1-student","plink_456":"c1-teacher"}'
+// Secrets: supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_123":"c1"}'
 // In Stripe: Developers > Webhooks > Add endpoint https://<project>.supabase.co/functions/v1/stripe-webhook,
 // events checkout.session.completed and charge.refunded.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";

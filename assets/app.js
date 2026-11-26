@@ -7,7 +7,7 @@ var CFG = window.JPX || {};
 var LIVE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey && window.supabase);
 var sb = LIVE ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
 var PAGE = document.body.getAttribute('data-page') || (document.getElementById('paper') ? 'app-paper' : '');
-var PACKS = {c1: {name: 'C1 Advanced · Use of English', products: ['c1-student', 'c1-teacher']}};
+var PACKS = {c1: {name: 'C1 Advanced · Use of English', products: ['c1', 'c1-student', 'c1-teacher']}};
 
 function $(id){ return document.getElementById(id); }
 function el(t, c, x){ var n = document.createElement(t); if(c) n.className = c; if(x != null) n.textContent = x; return n; }
@@ -25,7 +25,7 @@ var Demo = {
   signOut: function(){ try{ localStorage.removeItem('jpx-demo-user'); }catch(e){} return Promise.resolve(); },
   entitlements: function(){
     var exp = new Date(Date.now() + 365 * 864e5).toISOString();
-    return Promise.resolve([{product: 'c1-student', expires_at: exp}, {product: 'c1-teacher', expires_at: exp}]);
+    return Promise.resolve([{product: 'c1', expires_at: exp}]);
   },
   index: function(pack){ return fetch('/private-demo/' + pack + '-index.json').then(function(r){ if(!r.ok) throw 0; return r.json(); }).catch(function(){ return []; }); },
   paper: function(id){ return fetch('/private-demo/' + id + '.json').then(function(r){ if(!r.ok) throw new Error('missing'); return r.json(); }); },
@@ -75,8 +75,7 @@ function access(ents){
   ents.forEach(function(e){
     Object.keys(PACKS).forEach(function(p){
       if(PACKS[p].products.indexOf(e.product) >= 0){
-        a[p] = a[p] || {teacher: false, expires: e.expires_at};
-        if(/teacher/.test(e.product)) a[p].teacher = true;
+        a[p] = a[p] || {expires: e.expires_at};
         if(e.expires_at > a[p].expires) a[p].expires = e.expires_at;
       }
     });
@@ -147,7 +146,7 @@ function home(user){
         var row = el('div', 'row'); row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-top:' + (i ? '1px solid var(--rule)' : '0') + ';padding-top:' + (i ? '8px' : '0');
         row.appendChild(el('span', null, 'Paper ' + (i + 1) + ' · ' + p.title));
         var btns = el('span'); btns.style.cssText = 'display:flex;gap:8px';
-        var kinds = [['pdf_student', 'Student PDF']]; if(acc.c1.teacher) kinds.push(['pdf_teacher', 'Teacher PDF']);
+        var kinds = [['pdf_student', 'Student PDF'], ['pdf_teacher', 'Answer key PDF']];
         kinds.forEach(function(k){
           if(!p[k[0]]) return;
           var b = el('button', 'btn small', k[1]); b.type = 'button';

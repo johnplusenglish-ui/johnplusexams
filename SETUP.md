@@ -34,10 +34,10 @@ It can take from a few minutes to a few hours. HTTPS appears in GitHub Pages aft
 
 ## 4. Stripe
 1. Sign in to Stripe (or create an account) and turn on **Managed Payments** in Settings, so Stripe is the merchant of record and handles VAT. If it is not offered for your country, use Paddle instead and tell Claude.
-2. Create two products, one-off price (not recurring): "C1 Use of English, Student (12 months)" EUR 10 and "C1 Use of English, Teacher licence (12 months)" EUR 20.
-3. For each, create a **Payment Link**. Under After payment, choose "Don't show confirmation page" and redirect to `https://johnplusexams.com/app/?paid=1`. Turn on "Require customers to accept your terms of service", with the terms URL `https://johnplusexams.com/terms/` set in Stripe's public details. The terms say access starts straight away and the 14-day right to cancel ends, which is what makes "no refunds" valid in the EU.
-4. Put both payment links in `assets/config.js` under `checkout`.
-5. Deploy the webhook: `supabase functions deploy stripe-webhook --no-verify-jwt`, then `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_...":"c1-student","plink_...":"c1-teacher"}'` (each payment link's ID starts with plink_).
+2. Create one product, one-off price (not recurring): "C1 Advanced Use of English (12 months)" EUR 15. Students and teachers buy the same pack.
+3. Create a **Payment Link** for it. Under After payment, choose "Don't show confirmation page" and redirect to `https://johnplusexams.com/app/?paid=1`. Turn on "Require customers to accept your terms of service", with the terms URL `https://johnplusexams.com/terms/` set in Stripe's public details. The terms say access starts straight away and the 14-day right to cancel ends, which is what makes "no refunds" valid in the EU.
+4. Put the payment link in `assets/config.js` under `checkout.c1`.
+5. Deploy the webhook: `supabase functions deploy stripe-webhook --no-verify-jwt`, then `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_...":"c1"}'` (the payment link's ID starts with plink_).
 6. Stripe, Developers, Webhooks: add endpoint `https://<project>.supabase.co/functions/v1/stripe-webhook`, events `checkout.session.completed` and `charge.refunded`. Its signing secret is the `whsec_` value above.
 
 ## 5. Contact email
@@ -47,7 +47,7 @@ It can take from a few minutes to a few hours. HTTPS appears in GitHub Pages aft
 ```bash
 python3 tools/publish_papers.py --pack c1 --batch "<folder with uoe-c1-b1-01.json ...>" --private ~/Documents/johnplusexams-private --sort-start 11
 ```
-Run the new `seed-c1.sql` in Supabase and upload the new PDFs. For B2, use `--pack b2`, add `b2` to `PACKS` in `assets/app.js`, and create `b2-student` / `b2-teacher` products.
+Run the new `seed-c1.sql` in Supabase and upload the new PDFs. For B2, use `--pack b2`, add `b2` to `PACKS` in `assets/app.js`, and create a `b2` product and payment link.
 
 ## Editing the site
 Edit files in `pages/`, then run `python3 build.py`. The exam reader comes from `src/paper_template.html` (the C1 skill's template); after updating it, run `build.py` again.
