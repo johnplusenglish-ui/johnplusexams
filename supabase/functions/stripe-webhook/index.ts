@@ -4,7 +4,7 @@
 // Secrets: supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_123":"c1-student","plink_456":"c1-teacher"}'
 // In Stripe: Developers > Webhooks > Add endpoint https://<project>.supabase.co/functions/v1/stripe-webhook,
 // events checkout.session.completed and charge.refunded.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
 const LINKS: Record<string, string> = JSON.parse(Deno.env.get("STRIPE_LINKS") ?? "{}");

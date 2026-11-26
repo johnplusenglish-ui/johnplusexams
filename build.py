@@ -17,7 +17,7 @@ import os, re, glob
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = "https://johnplusexams.com"
 FONTS = open(os.path.join(ROOT, "assets/fonts/fonts.css")).read()
-SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
+SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"
 
 HEAD = """<!doctype html>
 <html lang="en">
@@ -42,9 +42,9 @@ HEAD = """<!doctype html>
 <body{body_attr}>
 <a class="sr" href="#main">Skip to the content</a>
 <header class="top"><div class="wrap">
-  <a class="logo" href="/" aria-label="johnplusexams home">john<span>plus</span>exams</a>
+  <a class="logo" href="/" aria-label="johnplusexams home"><svg class="logo-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path><path d="M9 14l2 2 4-4"></path></svg><span class="logo-text">john<span>plus</span>exams</span></a>
   <nav class="nav" aria-label="Main">
-    <a href="/c1-use-of-english/"{c1}>C1 Advanced</a>
+    <a href="/#levels"{c1}>Exams</a>
     <a class="hide-sm" href="/sample/c1-use-of-english.html">Free paper</a>
     <a class="hide-sm" href="/pricing/"{pricing}>Pricing</a>
     <a class="btn small" href="/app/" data-account>Sign in</a>
@@ -55,7 +55,7 @@ HEAD = """<!doctype html>
 
 FOOT = """</main>
 <footer class="site-foot"><div class="wrap">
-  <div><a class="logo" href="/">john<span>plus</span>exams</a><p class="small">Exam practice by John from <a href="https://johnplusenglish.com">johnplusenglish</a>.</p></div>
+  <div><a class="logo" href="/"><svg class="logo-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path><path d="M9 14l2 2 4-4"></path></svg><span class="logo-text">john<span>plus</span>exams</span></a><p class="small">Exam practice by John from <a href="https://johnplusenglish.com">johnplusenglish</a>.</p></div>
   <nav aria-label="Footer">
     <a href="/c1-use-of-english/">C1 Advanced</a>
     <a href="/pricing/">Pricing</a>
