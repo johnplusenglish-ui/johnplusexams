@@ -3,6 +3,11 @@
 var DATA = window.__PAPER__;
 var GAPRE = /\{\{(\d+)\}\}/g, KGAP = /_{3,}/;
 var NAMES = {part1:'Part 1', part2:'Part 2', part3:'Part 3', part4:'Part 4'};
+/* The level comes from the paper data ("B2", "C1" or "C2"); a paper without one is C1. */
+var LEVELS = {B2:{name:'B2 First', k4:'two and five'}, C1:{name:'C1 Advanced', k4:'three and six'}, C2:{name:'C2 Proficiency', k4:'three and eight'}};
+var LV = LEVELS[String(DATA.level || 'C1').toUpperCase()] || LEVELS.C1;
+/* "For questions 1 to 8": the numbers come from the part's own items. */
+function qrange(p, a, b){ var q = (p && p.items || []).map(function(it){ return it.q; }); return q.length ? q[0] + ' to ' + q[q.length - 1] : a + ' to ' + b; }
 var RUB = {
   part1: 'For questions 1 to 8, read the text below and decide which answer (A, B, C or D) best fits each gap. There is an example at the beginning (0).',
   part2: 'For questions 9 to 16, read the text below and think of the word which best fits each gap. Use only one word in each gap. There is an example at the beginning (0).',
@@ -56,7 +61,7 @@ function brandTop(){
 }
 function sheetFoot(){ var f = el('div', 'sfoot'); var l = logo(); l.setAttribute('aria-hidden', 'true'); f.appendChild(l); f.appendChild(el('span', null, '@johnplusenglish on Instagram')); return f; }
 function head(title, sub, h){ var d = el('div', 'head'); var t = el(h || 'h2', null, title); d.appendChild(t); d.appendChild(el('div', 'lv', sub)); return d; }
-function subline(){ return 'C1 Advanced' + (DATA.tests.length > 1 ? ', ' + (cur().name || 'Test ' + (S.set + 1)) : ''); }
+function subline(){ return LV.name + (DATA.tests.length > 1 ? ', ' + (cur().name || 'Test ' + (S.set + 1)) : ''); }
 
 function exampleLine(pk, p){
   var ex = p.example; if(!ex) return null;
@@ -142,9 +147,9 @@ function keyBox(w){ var k = el('div', 'key'); k.appendChild(el('span', 'sr', 'Ke
 function part4(p){
   var d = el('div');
   var r = el('div', 'rubric'), rp = el('p');
-  rp.appendChild(document.createTextNode('For questions 25 to 30, complete the second sentence so that it has a similar meaning to the first sentence, using the word given. '));
+  rp.appendChild(document.createTextNode('For questions ' + qrange(p, 25, 30) + ', complete the second sentence so that it has a similar meaning to the first sentence, using the word given. '));
   rp.appendChild(el('b', null, 'Do not change the word given. '));
-  rp.appendChild(document.createTextNode('You must use between three and six words, including the word given. Here is an example (0).'));
+  rp.appendChild(document.createTextNode('You must use between ' + LV.k4 + ' words, including the word given. Here is an example (0).'));
   r.appendChild(rp); d.appendChild(r);
   var ex = p.example || {lead:'Nobody told me about the party until yesterday.', key:'FOUND', gapped:'I only ___ the party yesterday.', answer:'found out | about'};
   var q0 = el('div', 'q'); q0.appendChild(el('div', 'no', '0')); var b0 = el('div', 'body');
@@ -174,7 +179,7 @@ function render(){
     sh.appendChild(h);
     if(pk === 'part4'){ sh.appendChild(part4(p)); }
     else {
-      var r = el('div', 'rubric'); r.appendChild(el('p', null, RUB[pk])); sh.appendChild(r);
+      var r = el('div', 'rubric'); r.appendChild(el('p', null, RUB[pk].replace(/^For questions \d+ to \d+/, 'For questions ' + qrange(p)))); sh.appendChild(r);
       var e = exampleLine(pk, p); if(e) sh.appendChild(e);
       if(p.title) sh.appendChild(el('p', 'ttl', p.title));
       sh.appendChild(passage(pk, p));

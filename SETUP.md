@@ -44,10 +44,11 @@ It can take from a few minutes to a few hours. HTTPS appears in GitHub Pages aft
 `hello@johnplusexams.com` is printed on the site. Set up free forwarding to your own inbox, for example with ImprovMX: add its two MX records in GoDaddy DNS.
 
 ## Adding papers later
+The paper format, file names, publish command and checklist are in `PAPER-FORMAT.md`. In short:
 ```bash
-python3 tools/publish_papers.py --pack c1 --batch "<folder with uoe-c1-b1-01.json ...>" --private ~/Documents/johnplusexams-private --sort-start 11
+python3 tools/publish_papers.py --pack c1 --batch "<folder with uoe-c1-b2-01.json ...>" --private ~/Documents/johnplusexams-private --sort-start 11
 ```
-Run the new `seed-c1.sql` in Supabase and upload the new PDFs. For B2, use `--pack b2`, add `b2` to `PACKS` in `assets/app.js`, and create a `b2` product and payment link.
+Run the new `seed-c1-from-11.sql` in Supabase and upload the new PDFs. For a new level (B2, C2), use `--pack b2` or `--pack c2`, add the pack to `PACKS` in `assets/app.js`, and create its product and payment link.
 
 ## Editing the site
 Edit files in `pages/`, then run `python3 build.py`. The exam reader comes from `src/paper_template.html` (the C1 skill's template); after updating it, run `build.py` again.

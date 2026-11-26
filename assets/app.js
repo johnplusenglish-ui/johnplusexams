@@ -7,7 +7,10 @@ var CFG = window.JPX || {};
 var LIVE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey && window.supabase);
 var sb = LIVE ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
 var PAGE = document.body.getAttribute('data-page') || (document.getElementById('paper') ? 'app-paper' : '');
-var PACKS = {c1: {name: 'C1 Advanced · Use of English', products: ['c1', 'c1-student', 'c1-teacher']}};
+/* One entry per level on sale. The key is the pack: paper ids start with it ('c1-01') and the PDFs sit in its folder. */
+var PACKS = {
+  c1: {name: 'C1 Advanced · Use of English', short: 'C1 Use of English', level: 'C1', page: '/c1-use-of-english/', products: ['c1', 'c1-student', 'c1-teacher']}
+};
 
 function $(id){ return document.getElementById(id); }
 function el(t, c, x){ var n = document.createElement(t); if(c) n.className = c; if(x != null) n.textContent = x; return n; }
@@ -25,7 +28,7 @@ var Demo = {
   signOut: function(){ try{ localStorage.removeItem('jpx-demo-user'); }catch(e){} return Promise.resolve(); },
   entitlements: function(){
     var exp = new Date(Date.now() + 365 * 864e5).toISOString();
-    return Promise.resolve([{product: 'c1', expires_at: exp}]);
+    return Promise.resolve(Object.keys(PACKS).map(function(p){ return {product: p, expires_at: exp}; }));
   },
   index: function(pack){ return fetch('/private-demo/' + pack + '-index.json').then(function(r){ if(!r.ok) throw 0; return r.json(); }).catch(function(){ return []; }); },
   paper: function(id){ return fetch('/private-demo/' + id + '.json').then(function(r){ if(!r.ok) throw new Error('missing'); return r.json(); }); },
@@ -124,37 +127,45 @@ function home(user){
     [[Object.keys(done).length, 'papers started'], [mx ? Math.round(100 * tot / mx) + '%' : '-', 'best scores overall'], [mistakes.length, 'mistakes to fix']].forEach(function(s){
       var d = el('div', 'stat'); d.appendChild(el('b', null, String(s[0]))); d.appendChild(el('span', null, s[1])); stats.appendChild(d);
     });
-    if(!acc.c1){ $('noaccess').hidden = false; return; }
-    $('c1sec').hidden = false; $('c1exp').textContent = 'Access until ' + fmtDate(acc.c1.expires);
-    return DB.index('c1').then(function(list){
-      var box = $('c1list');
-      if(!list.length){ box.appendChild(el('p', 'empty', 'Your papers will appear here.')); return; }
-      list.forEach(function(p, i){
-        var a = el('a', 'pcard'); a.href = '/app/paper.html?id=' + encodeURIComponent(p.id);
-        a.appendChild(el('span', 'eyebrow', 'Paper ' + (i + 1)));
-        a.appendChild(el('span', 't', p.title));
-        a.appendChild(el('span', 'topics', p.topics || ''));
-        var bars = el('div', 'bars4');
-        ['part1', 'part2', 'part3', 'part4'].forEach(function(pk, j){
-          var x = bp[p.id + '|' + pk], w = el('div', 'bar4'), lab = 'Part ' + (j + 1) + (x ? ' · ' + x.score + '/' + x.max : '');
-          w.appendChild(el('span', null, lab)); var i2 = el('i'); var bb = el('b'); bb.style.width = x ? (100 * x.score / x.max) + '%' : '0'; i2.appendChild(bb); w.appendChild(i2); bars.appendChild(w);
+    var owned = Object.keys(PACKS).filter(function(p){ return acc[p]; });
+    if(!owned.length){ $('noaccess').hidden = false; return; }
+    return Promise.all(owned.map(function(p){ return DB.index(p); })).then(function(lists){
+      var packsBox = $('packs'), pl = $('pdflist'), anyPdf = false;
+      owned.forEach(function(pack, n){
+        var list = lists[n], sec = el('section'), hid = pack + 'h';
+        sec.setAttribute('aria-labelledby', hid);
+        var hd = el('div', 'sheet-head'); hd.style.borderColor = 'var(--ink)';
+        var h2 = el('h2', null, PACKS[pack].name); h2.id = hid; h2.style.fontSize = '1.3rem'; hd.appendChild(h2);
+        hd.appendChild(el('span', 'lv', 'Access until ' + fmtDate(acc[pack].expires))); sec.appendChild(hd);
+        var box = el('div', 'paperlist'); sec.appendChild(box); packsBox.appendChild(sec);
+        if(!list.length){ box.appendChild(el('p', 'empty', 'Your papers will appear here.')); return; }
+        list.forEach(function(p, i){
+          var a = el('a', 'pcard'); a.href = '/app/paper.html?id=' + encodeURIComponent(p.id);
+          a.appendChild(el('span', 'eyebrow', 'Paper ' + (i + 1)));
+          a.appendChild(el('span', 't', p.title));
+          a.appendChild(el('span', 'topics', p.topics || ''));
+          var bars = el('div', 'bars4');
+          ['part1', 'part2', 'part3', 'part4'].forEach(function(pk, j){
+            var x = bp[p.id + '|' + pk], w = el('div', 'bar4'), lab = 'Part ' + (j + 1) + (x ? ' · ' + x.score + '/' + x.max : '');
+            w.appendChild(el('span', null, lab)); var i2 = el('i'); var bb = el('b'); bb.style.width = x ? (100 * x.score / x.max) + '%' : '0'; i2.appendChild(bb); w.appendChild(i2); bars.appendChild(w);
+          });
+          a.appendChild(bars); box.appendChild(a);
         });
-        a.appendChild(bars); box.appendChild(a);
-      });
-      var pl = $('pdflist'); $('pdfsec').hidden = false;
-      list.forEach(function(p, i){
-        var row = el('div', 'row'); row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-top:' + (i ? '1px solid var(--rule)' : '0') + ';padding-top:' + (i ? '8px' : '0');
-        row.appendChild(el('span', null, 'Paper ' + (i + 1) + ' · ' + p.title));
-        var btns = el('span'); btns.style.cssText = 'display:flex;gap:8px';
-        var kinds = [['pdf_student', 'Student PDF'], ['pdf_teacher', 'Answer key PDF']];
-        kinds.forEach(function(k){
-          if(!p[k[0]]) return;
-          var b = el('button', 'btn small', k[1]); b.type = 'button';
-          b.addEventListener('click', function(){ b.disabled = true; DB.pdf(p[k[0]]).then(function(u){ window.open(u, '_blank', 'noopener'); }).catch(function(){ alertMsg('That PDF could not be opened. Try again in a moment.'); }).then(function(){ b.disabled = false; }); });
-          btns.appendChild(b);
+        list.forEach(function(p, i){
+          var row = el('div', 'row'), first = !pl.children.length; anyPdf = true;
+          row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-top:' + (first ? '0' : '1px solid var(--rule)') + ';padding-top:' + (first ? '0' : '8px');
+          row.appendChild(el('span', null, (owned.length > 1 ? PACKS[pack].level + ' ' : '') + 'Paper ' + (i + 1) + ' · ' + p.title));
+          var btns = el('span'); btns.style.cssText = 'display:flex;gap:8px';
+          [['pdf_student', 'Student PDF'], ['pdf_teacher', 'Answer key PDF']].forEach(function(k){
+            if(!p[k[0]]) return;
+            var b = el('button', 'btn small', k[1]); b.type = 'button';
+            b.addEventListener('click', function(){ b.disabled = true; DB.pdf(p[k[0]]).then(function(u){ window.open(u, '_blank', 'noopener'); }).catch(function(){ alertMsg('That PDF could not be opened. Try again in a moment.'); }).then(function(){ b.disabled = false; }); });
+            btns.appendChild(b);
+          });
+          row.appendChild(btns); pl.appendChild(row);
         });
-        row.appendChild(btns); pl.appendChild(row);
       });
+      if(anyPdf) $('pdfsec').hidden = false;
     });
   }).catch(function(e){ $('stats').appendChild(el('p', 'msg err', 'Your papers could not be loaded. Check your connection and refresh.')); console.error(e); });
 }
@@ -165,9 +176,11 @@ function reader(user){
   var id = qs('id'), gate = $('gate');
   if(!user){ gate.innerHTML = ''; gate.appendChild(document.createTextNode('Sign in to open this paper. ')); var a = el('a', null, 'Sign in'); a.href = '/app/'; gate.appendChild(a); return; }
   DB.paper(id).then(function(data){
+    var pk = PACKS[packOf(id)] || {};
     data.slug = 'jpx-' + id;
+    data.level = data.level || pk.level || packOf(id).toUpperCase();
     window.__PAPER__ = data;
-    document.title = (data.tests[0] && data.tests[0].name ? data.tests[0].name + ' · ' : '') + 'C1 Use of English · johnplusexams';
+    document.title = (data.tests[0] && data.tests[0].name ? data.tests[0].name + ' · ' : '') + (pk.short || 'Use of English') + ' · johnplusexams';
     gate.textContent = '';
     window.addEventListener('uoe:part-checked', function(e){
       var d = e.detail, items = d.test[d.pk].items;
@@ -186,7 +199,8 @@ function reader(user){
   }).catch(function(){
     gate.innerHTML = '';
     gate.appendChild(document.createTextNode('This paper is part of a pack your account does not have yet. '));
-    var a = el('a', null, 'See the C1 pack'); a.href = '/c1-use-of-english/#pricing'; gate.appendChild(a);
+    var pk = PACKS[packOf(id)] || PACKS.c1;
+    var a = el('a', null, 'See the ' + pk.level + ' pack'); a.href = pk.page + '#pricing'; gate.appendChild(a);
   });
 }
 
@@ -241,7 +255,7 @@ function mistakesPage(user){
 }
 function card(m, t, p, it){
   var pk = m.part, box = el('div', 'mist');
-  box.appendChild(el('div', 'meta', (t.name || 'Paper') + ' · ' + pk.replace('part', 'Part ') + ' · question ' + it.q + (p.title ? ' · ' + p.title : '')));
+  box.appendChild(el('div', 'meta', packOf(m.paper_id).toUpperCase() + ' ' + (t.name || 'Paper') + ' · ' + pk.replace('part', 'Part ') + ' · question ' + it.q + (p.title ? ' · ' + p.title : '')));
   var ctx = el('div', 'ctx'), input = null, choice = null;
   if(pk === 'part4'){
     ctx.appendChild(el('p', null, it.lead));
