@@ -8,7 +8,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 const SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
 const LINKS: Record<string, string> = JSON.parse(Deno.env.get("STRIPE_LINKS") ?? "{}");
-const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+// Server-side key: the legacy service role key if the project still has one, else the new secret key.
+function serverKey(): string {
+  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (legacy) return legacy;
+  try { const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}"); return keys.default ?? Object.values(keys)[0] ?? ""; } catch { return ""; }
+}
+const db = createClient(Deno.env.get("SUPABASE_URL")!, serverKey(), { auth: { persistSession: false } });
 
 async function hmac(key: string, msg: string): Promise<string> {
   const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(key), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
