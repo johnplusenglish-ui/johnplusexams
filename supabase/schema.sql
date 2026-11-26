@@ -1,7 +1,7 @@
 -- johnplusexams database. Run once in the Supabase SQL editor of the NEW project.
 -- Who can read what is decided here, not in the website: the anon key in config.js is public.
 
--- Packs a person has paid for. Written only by the Lemon Squeezy webhook (service role).
+-- Packs a person has paid for. Written only by the Stripe webhook (service role).
 create table if not exists entitlements (
   id bigint generated always as identity primary key,
   email text not null,

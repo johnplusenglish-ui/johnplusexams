@@ -2,7 +2,7 @@
 
 - **This repo (public, GitHub Pages):** the website, the free sample paper, the sign-in pages and the exam reader. No paid papers live here.
 - **Supabase (new organisation on Pro, project "johnplusexams"):** sign-in, the paid papers, the PDFs, scores and mistakes. The rules in `supabase/schema.sql` decide who can read what.
-- **Lemon Squeezy:** takes the payment and handles VAT. Its webhook tells Supabase who has paid.
+- **Stripe (Managed Payments):** takes the payment and acts as the seller, so it handles VAT. Its webhook tells Supabase who has paid. (Lemon Squeezy was the first plan, but it closed to new sellers in November 2026 and shuts on 31 March 2027.)
 - **Private folder `~/Documents/johnplusexams-private`:** the paper seed (`seed-c1.sql`) and the PDFs. Never commit it.
 
 ## 1. GitHub
@@ -32,12 +32,16 @@ It can take from a few minutes to a few hours. HTTPS appears in GitHub Pages aft
 6. Authentication, Emails: edit the Magic Link template so it says johnplusexams.
 7. Project Settings, API: copy the Project URL and the anon public key into `assets/config.js`.
 
-## 4. Lemon Squeezy
-1. Create two products: "C1 Use of English, Student (12 months)" and "C1 Use of English, Teacher licence (12 months)". Single payment, not subscription.
-2. Copy each checkout link into `assets/config.js` under `checkout`.
-3. Note each variant ID.
-4. Deploy the webhook: `supabase functions deploy lemon-webhook --no-verify-jwt`, then set secrets `LEMON_SIGNING_SECRET` and `LEMON_VARIANTS` (variant ID to `c1-student` / `c1-teacher`).
-5. Lemon Squeezy Settings, Webhooks: URL `https://<project>.supabase.co/functions/v1/lemon-webhook`, events `order_created` and `order_refunded`, the same signing secret.
+## 4. Stripe
+1. Sign in to Stripe (or create an account) and turn on **Managed Payments** in Settings, so Stripe is the merchant of record and handles VAT. If it is not offered for your country, use Paddle instead and tell Claude.
+2. Create two products, one-off price (not recurring): "C1 Use of English, Student (12 months)" EUR 14 and "C1 Use of English, Teacher licence (12 months)" EUR 25.
+3. For each, create a **Payment Link**. Under After payment, choose "Don't show confirmation page" and redirect to `https://johnplusexams.com/app/?paid=1`. Turn on "Require customers to accept your terms of service", with the terms URL `https://johnplusexams.com/terms/` set in Stripe's public details. The terms say access starts straight away and the 14-day right to cancel ends, which is what makes "no refunds" valid in the EU.
+4. Put both payment links in `assets/config.js` under `checkout`.
+5. Deploy the webhook: `supabase functions deploy stripe-webhook --no-verify-jwt`, then `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_... STRIPE_LINKS='{"plink_...":"c1-student","plink_...":"c1-teacher"}'` (each payment link's ID starts with plink_).
+6. Stripe, Developers, Webhooks: add endpoint `https://<project>.supabase.co/functions/v1/stripe-webhook`, events `checkout.session.completed` and `charge.refunded`. Its signing secret is the `whsec_` value above.
+
+## 5. Contact email
+`hello@johnplusexams.com` is printed on the site. Set up free forwarding to your own inbox, for example with ImprovMX: add its two MX records in GoDaddy DNS.
 
 ## Adding papers later
 ```bash
