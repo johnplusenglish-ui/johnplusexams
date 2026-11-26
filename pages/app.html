@@ -1,0 +1,39 @@
+title: My papers · johnplusexams
+description: Sign in to open your practice papers.
+path: app/index.html
+page: app-home
+app: true
+head: <meta name="robots" content="noindex">
+---
+<div id="signin" class="sheet" style="max-width:520px;margin:clamp(10px,4vw,40px) auto" hidden>
+  <div class="sheet-head"><h1 style="font-size:1.6rem">Sign in</h1><span class="lv">johnplusexams</span></div>
+  <p class="muted" style="margin-bottom:18px">Enter the email you paid with. We'll send you a link to sign in, so there's no password to remember.</p>
+  <form id="signin-form" class="stack" style="gap:14px" novalidate>
+    <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" inputmode="email" required></div>
+    <button class="btn main" type="submit" id="signin-btn">Send me a sign-in link</button>
+    <p id="signin-msg" class="msg" role="status" hidden></p>
+  </form>
+  <p class="small muted" style="margin-top:18px">No pack yet? <a href="/c1-use-of-english/">See the C1 pack</a> or <a href="/sample/c1-use-of-english.html">try a free paper</a>.</p>
+</div>
+
+<div id="dash" class="stack" hidden>
+  <div class="sec-head" style="max-width:none;flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px">
+    <div><p class="eyebrow" id="who"></p><h1 style="font-size:clamp(1.8rem,5vw,2.4rem)">My papers</h1></div>
+    <div class="cta"><a class="btn" href="/app/mistakes.html">My Mistakes <span id="mcount"></span></a><button class="btn small" id="signout" type="button">Sign out</button></div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div id="noaccess" class="sheet" hidden>
+    <h2 style="font-size:1.3rem;margin-bottom:8px">No active pack on this email</h2>
+    <p class="muted" id="noaccess-text">If you've just paid, wait a minute and refresh. Make sure you signed in with the email you used at checkout.</p>
+    <div class="cta" style="margin-top:14px"><a class="btn main" href="/c1-use-of-english/#pricing">Get the C1 pack</a><a class="btn" href="/sample/c1-use-of-english.html">Free paper</a></div>
+  </div>
+  <section aria-labelledby="c1h" id="c1sec" hidden>
+    <div class="sheet-head" style="border-color:var(--ink)"><h2 id="c1h" style="font-size:1.3rem">C1 Advanced · Use of English</h2><span class="lv" id="c1exp"></span></div>
+    <div class="paperlist" id="c1list"></div>
+  </section>
+  <section id="pdfsec" hidden aria-labelledby="pdfh">
+    <div class="sheet-head"><h2 id="pdfh" style="font-size:1.3rem">PDFs to print</h2><span class="lv">one part per A4 page</span></div>
+    <div class="sheet"><div id="pdflist" class="stack" style="gap:8px"></div></div>
+  </section>
+</div>
+<p id="demo-note" class="note" style="margin-top:18px" hidden>Demo mode: this is a local preview. Nothing is saved online until Supabase is connected.</p>

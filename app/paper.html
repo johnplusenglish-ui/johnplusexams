@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your paper · johnplusexams</title>
+<style>
+:root{
+  --paper:#FFFFFF; --ink:#000000; --desk:#D9DEE5; --soft:#4A4F63; --line:#C9CDD6;
+  --sky:#2176FF; --sky-light:#E8EEFF;
+  --sea-d:#0F7D71; --sea-tint:#E4FBF7;
+  --coral-d:#D6453F; --coral-tint:#FDECEC; --coral-text:#B8322D;
+  --sun:#FFB347; --sun-tint:#FFF5E6; --sun-text:#8A5700;
+  --w4:400; --w5:500; --w6:600;
+  --wide:860px;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--desk);color:var(--ink);font:var(--w4) 1rem/1.55 "Helvetica Neue",Helvetica,Arial,sans-serif}
+em,i,blockquote,cite{font-style:normal}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:absolute;left:-9999px;top:8px;background:#fff;color:var(--ink);padding:10px 14px;border:2px solid var(--ink);border-radius:6px;z-index:10}
+.skip:focus{left:8px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+h1:focus,h2:focus{outline:none}
+
+.bar{background:#fff;border-bottom:1px solid var(--line)}
+.bar[hidden]{display:none}
+.bar-in{max-width:var(--wide);margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs[hidden],.bar-in [hidden]{display:none !important}
+.tab{appearance:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 18px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.field span{font-size:.875rem;color:var(--soft)}
+select{font:var(--w4) 1rem/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+.btn{appearance:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;min-width:44px;padding:8px 14px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
+.btn.main{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default}
+
+main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
+.sheet{background:var(--paper);border:1px solid #B9BFCB;padding:clamp(20px,5vw,52px);margin:0 0 22px;box-shadow:0 2px 0 #B9BFCB}
+.sheet[hidden]{display:none}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin:0 0 18px}
+.head h1,.head h2{font-size:1.5rem;line-height:1.2;font-weight:var(--w6);margin:0}
+.head .lv{font-size:.9375rem;color:var(--soft);text-align:right}
+.rubric p{margin:0 0 10px;max-width:68ch}
+.rubric b{font-weight:var(--w6)}
+.exline{margin:4px 0 14px;font-size:1rem}
+.exline b{font-weight:var(--w6)}
+.ttl{text-align:center;font-weight:var(--w6);font-size:1.1875rem;margin:22px 0 12px}
+.text p{font-size:1.0625rem;line-height:2.25;margin:0 0 14px}
+.gn{font-weight:var(--w6);margin:0 2px 0 4px}
+.gw{white-space:nowrap}
+.exo{display:inline-block;margin-right:16px}
+/* Gaps stay at text height on purpose: a taller field drops its line below the words. */
+.gap{display:inline-block;width:6em;text-align:center;border:0;border-bottom:2px dotted var(--ink);border-radius:0;background:transparent;vertical-align:baseline;
+  font:var(--w4) 1.0625rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);padding:0 6px 2px;margin:0 4px 0 2px}
+.gap.wide{width:min(100%,16em)}
+.gap{max-width:100%}
+/* An empty slot keeps a text baseline, so its line sits where a filled one does. */
+.slot:empty::before{content:"\200b"}
+.gap:focus{background:var(--sky-light);border-bottom-style:solid;border-bottom-color:var(--sky)}
+.slot{display:inline-block;min-width:6.5em;text-align:center;border-bottom:2px dotted var(--ink);padding:0 6px 2px;margin:0 4px 0 2px;line-height:1.25;font-weight:var(--w6)}
+.eg{font-weight:var(--w6);display:inline-block;line-height:1.25;border-bottom:2px solid var(--ink);padding:0 10px 2px;margin:0 4px}
+.stem{display:inline-block;font-weight:var(--w6);letter-spacing:.04em;font-size:.9375rem;border:1.5px solid var(--ink);padding:0 8px;line-height:1.5;margin:0 2px}
+.m2{background:var(--sea-tint) !important;border-bottom:2px solid var(--sea-d) !important}
+.m1{background:var(--sun-tint) !important;border-bottom:2px solid var(--sun) !important}
+.m0{background:var(--coral-tint) !important;border-bottom:2px solid var(--coral-d) !important}
+.shown{background:var(--sky-light) !important;border-bottom:2px solid var(--sky) !important;font-weight:700}
+
+.opts{margin:22px 0 0;display:grid;gap:10px}
+.orow{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:0 8px;align-items:center}
+.orow .no{font-weight:var(--w6)}
+.ochoices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.opt{appearance:none;font:var(--w4) 1rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;min-width:0;overflow-wrap:anywhere}
+.opt b{font-weight:var(--w6);margin-right:6px}
+.opt[aria-pressed="true"]{border:2px solid var(--ink);font-weight:var(--w6)}
+.opt.right{border:2px solid var(--sea-d);color:var(--sea-d);font-weight:var(--w6)}
+.opt.wrong{border:2px solid var(--coral-d);color:var(--coral-text)}
+.opt:disabled{cursor:default}
+
+.q{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:0 8px;margin:0 0 30px}
+.q .no{font-weight:var(--w6);font-size:1.125rem;line-height:1.55}
+.q .body{min-width:0}
+.first{font-size:1.125rem;line-height:1.5;margin:0 0 12px}
+.key{display:inline-block;border:1.5px solid var(--ink);padding:4px 16px;font-weight:var(--w6);font-size:1.0625rem;letter-spacing:.05em;margin:0 0 12px;line-height:1.4}
+.second{font-size:1.125rem;line-height:2.3;margin:0}
+.fb{margin:6px 0 0;font-size:.9375rem;min-height:1.4em}
+.fb.m2c{color:var(--sea-d);font-weight:var(--w6)}
+.fb.m1c{color:var(--sun-text)}
+.fb.m0c{color:var(--coral-text)}
+
+.brand{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;margin:0 0 22px;padding:0 0 16px;border-bottom:1px solid var(--line)}
+.brand img,.endbrand img{border-radius:50%;flex:none}
+.logo{font-weight:800;letter-spacing:-.02em;font-size:1.25rem;line-height:1.2;color:var(--ink)}
+.logo span{color:#2176FF}
+.handle{font-size:.9375rem;color:var(--soft)}
+.ig{margin-left:auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 14px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif}
+.ig:hover{border-color:var(--ink)}
+.ig svg{width:18px;height:18px;flex:none}
+.sfoot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;margin:30px 0 0;padding:12px 0 0;border-top:1px solid var(--line);font-size:.875rem;color:var(--soft)}
+.sfoot .logo{font-size:.9375rem}
+.endbrand{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;margin:8px 0 22px;padding:16px;background:#fff;border:1px solid #B9BFCB;border-radius:8px}
+.endbrand p{margin:0;font-size:.9375rem;color:var(--soft)}
+.exps{margin:14px 0 0}
+.exps[hidden]{display:none}
+.exps summary{display:inline-block;cursor:pointer;list-style:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;padding:10px 14px;border:1px solid #8D93A5;border-radius:6px;background:#fff;min-height:44px}
+.exps summary::-webkit-details-marker{display:none}
+.exps ol{list-style:none;margin:12px 0 0;padding:0}
+.exps li{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:0 8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.exps li:last-child{border-bottom:0}
+.exps .no{font-weight:var(--w6)}
+.exps p{margin:0}
+.kb{font-weight:var(--w6)}
+.exps .res{font-weight:var(--w6)}
+.exps .ok{color:var(--sea-d)}
+.exps .bad{color:var(--coral-text)}
+.exps .half{color:var(--sun-text)}
+.exps .ex{margin:2px 0 0}
+.exps .m{font-size:.9375rem;color:var(--soft);margin:2px 0 0}
+.prow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:22px 0 0}
+.pscore{margin:0;font-weight:var(--w6)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 22px}
+.score{font-weight:var(--w6);font-size:1.125rem;margin-left:4px}
+.note{font-size:.875rem;color:var(--soft);margin:0 0 22px;max-width:70ch}
+
+.keysheet h3{font-size:1.125rem;margin:22px 0 6px}
+.keysheet ol{list-style:none;margin:0;padding:0}
+.keysheet li{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:0 8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.keysheet li:last-child{border-bottom:0}
+.keysheet .a{font-weight:var(--w6);font-size:1.0625rem}
+.keysheet .bar2{color:var(--soft);font-weight:var(--w4);padding:0 6px}
+.keysheet .m,.keysheet .alt{font-size:.9375rem;color:var(--soft)}
+
+@media (max-width:560px){
+  main{padding:14px 10px 40px}
+  .q,.keysheet li{grid-template-columns:1.7rem minmax(0,1fr);gap:0 6px}
+  .orow{grid-template-columns:1.6rem minmax(0,1fr)}
+  .ochoices{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .head{flex-direction:column;align-items:flex-start;gap:2px}
+  .head .lv{text-align:left}
+  .gap{width:5.5em}
+}
+/* Print and PDF: one part per A4 page, answer key (answers only) on the last page. */
+@page{size:A4;margin:13mm 15mm}
+@media print{
+  html,body{background:#fff}
+  body{font-size:12pt}
+  .bar,.actions,.note,.fb,.skip,.pscore,.prow,.exps,.ig,.endbrand,.keysheet .m,.keysheet .kx{display:none !important}
+  main{padding:0;max-width:none}
+  .sheet{border:0;box-shadow:none;padding:0;margin:0;break-after:page;page-break-after:always}
+  .keysheet{display:block !important;break-before:page;break-after:auto;page-break-after:auto}
+  .brand{margin:0 0 8px;padding:0 0 8px}
+  .brand img{width:38px;height:38px}
+  .logo{font-size:12.5pt}
+  .handle{font-size:9.5pt}
+  .head{margin:0 0 8px;padding-bottom:4px}
+  .head h1,.head h2{font-size:15pt}
+  .head .lv{font-size:10pt}
+  .rubric p{font-size:11.5pt;line-height:1.45;margin:0 0 6px;max-width:none}
+  .exline{font-size:11.5pt;margin:2px 0 8px}
+  .ttl{font-size:13.5pt;margin:12px 0 6px}
+  .text p{font-size:12.5pt;line-height:2.2;margin:0 0 8px}
+  .gap,.slot{background:transparent !important;border-bottom:1.5px dotted #000 !important;color:transparent !important}
+  .gap{width:5.5em}.gap.wide{width:15em}
+  .stem{font-size:10.5pt}
+  .opts{margin:10px 0 0;gap:2px}
+  .orow{grid-template-columns:1.6rem minmax(0,1fr);break-inside:avoid}
+  .ochoices{gap:0 6px}
+  .opt{font-size:12pt;border:0 !important;color:#000 !important;font-weight:400 !important;min-height:0;padding:1px 2px;background:none}
+  .q{margin:0 0 16px;break-inside:avoid}
+  .q .no{font-size:12.5pt}
+  .first{font-size:12.5pt;margin:0 0 6px}
+  .key{font-size:11pt;padding:2px 12px;margin:0 0 4px}
+  .second{font-size:12.5pt;line-height:2.1}
+  .eg{border-bottom-width:1.5px}
+  .sfoot{margin:12px 0 0;padding:5px 0 0;font-size:8.5pt}
+  .sfoot .logo{font-size:9pt}
+  .keysheet h3{font-size:11pt;margin:10px 0 3px}
+  .keysheet ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 12px}
+  .keysheet ol.k4{grid-template-columns:1fr}
+  .keysheet li{grid-template-columns:1.8rem minmax(0,1fr);padding:3px 0;border:0}
+  .keysheet .a{font-size:12pt;font-weight:var(--w5)}
+  .keysheet h3{font-size:12.5pt}
+  .keysheet li{padding:5px 0}
+  body.nokey .keysheet{display:none !important}
+}
+.jpx-bar{display:flex;justify-content:space-between;gap:12px;margin:0 0 14px;font-size:.95rem}.jpx-bar a{color:var(--ink);text-decoration:none;font-weight:600}.jpx-bar a:hover{color:var(--sky)}.jpx-gate{background:#fff;border-radius:6px;padding:28px;text-align:center;color:var(--soft)}.jpx-gate:empty{display:none}.jpx-gate a{color:var(--sky)}
+</style>
+</head>
+<body>
+<a class="skip" href="#paper">Skip to the paper</a>
+<header class="bar" id="bar" hidden><div class="bar-in" role="group" aria-label="Choose a test">
+  <div class="tabs" id="tabs" role="tablist" aria-label="Tests" hidden></div>
+  <label class="field" id="pick"><span>Test</span><select id="test"></select></label>
+  <button class="btn" id="prev" type="button">Previous</button>
+  <button class="btn" id="next" type="button">Next</button>
+</div></header>
+
+<main>
+  <div class="jpx-bar"><a href="/app/">&larr; My papers</a><a href="/app/mistakes.html">My Mistakes</a></div>
+  <div id="gate" class="jpx-gate" role="status">Opening your paper...</div>
+  <div id="paper"></div>
+
+  <div class="actions">
+    <button class="btn main" id="check" type="button">Check the whole paper</button>
+    <button class="btn" id="showkey" type="button" aria-expanded="false" aria-controls="keysheet">Show answers</button>
+    <button class="btn" id="clear" type="button">Clear my answers</button>
+    <button class="btn" id="print" type="button">Print this test</button>
+    <span class="score" id="score" role="status" aria-live="polite"></span>
+  </div>
+  <p class="note">Parts 1 to 3 give one mark per question. Part 4 gives two marks per question, one for each half of the answer, and contractions count as two words. Spelling must be correct in Parts 2 to 4. If you wrote something different that is also correct, the key may simply be missing it.</p>
+
+  <article class="sheet keysheet" id="keysheet" hidden aria-label="Answer key"></article>
+  <div class="endbrand" id="endbrand"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/assets/config.js"></script>
+<script src="/assets/app.js"></script>
+
+</body>
+</html>

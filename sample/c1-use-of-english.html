@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading and Use of English, C1 Advanced</title>
+<style>
+:root{
+  --paper:#FFFFFF; --ink:#000000; --desk:#D9DEE5; --soft:#4A4F63; --line:#C9CDD6;
+  --sky:#2176FF; --sky-light:#E8EEFF;
+  --sea-d:#0F7D71; --sea-tint:#E4FBF7;
+  --coral-d:#D6453F; --coral-tint:#FDECEC; --coral-text:#B8322D;
+  --sun:#FFB347; --sun-tint:#FFF5E6; --sun-text:#8A5700;
+  --w4:400; --w5:500; --w6:600;
+  --wide:860px;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--desk);color:var(--ink);font:var(--w4) 1rem/1.55 "Helvetica Neue",Helvetica,Arial,sans-serif}
+em,i,blockquote,cite{font-style:normal}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:absolute;left:-9999px;top:8px;background:#fff;color:var(--ink);padding:10px 14px;border:2px solid var(--ink);border-radius:6px;z-index:10}
+.skip:focus{left:8px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+h1:focus,h2:focus{outline:none}
+
+.bar{background:#fff;border-bottom:1px solid var(--line)}
+.bar[hidden]{display:none}
+.bar-in{max-width:var(--wide);margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs[hidden],.bar-in [hidden]{display:none !important}
+.tab{appearance:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 18px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.field span{font-size:.875rem;color:var(--soft)}
+select{font:var(--w4) 1rem/1.3 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+.btn{appearance:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;min-width:44px;padding:8px 14px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
+.btn.main{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default}
+
+main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
+.sheet{background:var(--paper);border:1px solid #B9BFCB;padding:clamp(20px,5vw,52px);margin:0 0 22px;box-shadow:0 2px 0 #B9BFCB}
+.sheet[hidden]{display:none}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin:0 0 18px}
+.head h1,.head h2{font-size:1.5rem;line-height:1.2;font-weight:var(--w6);margin:0}
+.head .lv{font-size:.9375rem;color:var(--soft);text-align:right}
+.rubric p{margin:0 0 10px;max-width:68ch}
+.rubric b{font-weight:var(--w6)}
+.exline{margin:4px 0 14px;font-size:1rem}
+.exline b{font-weight:var(--w6)}
+.ttl{text-align:center;font-weight:var(--w6);font-size:1.1875rem;margin:22px 0 12px}
+.text p{font-size:1.0625rem;line-height:2.25;margin:0 0 14px}
+.gn{font-weight:var(--w6);margin:0 2px 0 4px}
+.gw{white-space:nowrap}
+.exo{display:inline-block;margin-right:16px}
+/* Gaps stay at text height on purpose: a taller field drops its line below the words. */
+.gap{display:inline-block;width:6em;text-align:center;border:0;border-bottom:2px dotted var(--ink);border-radius:0;background:transparent;vertical-align:baseline;
+  font:var(--w4) 1.0625rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);padding:0 6px 2px;margin:0 4px 0 2px}
+.gap.wide{width:min(100%,16em)}
+.gap{max-width:100%}
+/* An empty slot keeps a text baseline, so its line sits where a filled one does. */
+.slot:empty::before{content:"\200b"}
+.gap:focus{background:var(--sky-light);border-bottom-style:solid;border-bottom-color:var(--sky)}
+.slot{display:inline-block;min-width:6.5em;text-align:center;border-bottom:2px dotted var(--ink);padding:0 6px 2px;margin:0 4px 0 2px;line-height:1.25;font-weight:var(--w6)}
+.eg{font-weight:var(--w6);display:inline-block;line-height:1.25;border-bottom:2px solid var(--ink);padding:0 10px 2px;margin:0 4px}
+.stem{display:inline-block;font-weight:var(--w6);letter-spacing:.04em;font-size:.9375rem;border:1.5px solid var(--ink);padding:0 8px;line-height:1.5;margin:0 2px}
+.m2{background:var(--sea-tint) !important;border-bottom:2px solid var(--sea-d) !important}
+.m1{background:var(--sun-tint) !important;border-bottom:2px solid var(--sun) !important}
+.m0{background:var(--coral-tint) !important;border-bottom:2px solid var(--coral-d) !important}
+.shown{background:var(--sky-light) !important;border-bottom:2px solid var(--sky) !important;font-weight:700}
+
+.opts{margin:22px 0 0;display:grid;gap:10px}
+.orow{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:0 8px;align-items:center}
+.orow .no{font-weight:var(--w6)}
+.ochoices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.opt{appearance:none;font:var(--w4) 1rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;min-width:0;overflow-wrap:anywhere}
+.opt b{font-weight:var(--w6);margin-right:6px}
+.opt[aria-pressed="true"]{border:2px solid var(--ink);font-weight:var(--w6)}
+.opt.right{border:2px solid var(--sea-d);color:var(--sea-d);font-weight:var(--w6)}
+.opt.wrong{border:2px solid var(--coral-d);color:var(--coral-text)}
+.opt:disabled{cursor:default}
+
+.q{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:0 8px;margin:0 0 30px}
+.q .no{font-weight:var(--w6);font-size:1.125rem;line-height:1.55}
+.q .body{min-width:0}
+.first{font-size:1.125rem;line-height:1.5;margin:0 0 12px}
+.key{display:inline-block;border:1.5px solid var(--ink);padding:4px 16px;font-weight:var(--w6);font-size:1.0625rem;letter-spacing:.05em;margin:0 0 12px;line-height:1.4}
+.second{font-size:1.125rem;line-height:2.3;margin:0}
+.fb{margin:6px 0 0;font-size:.9375rem;min-height:1.4em}
+.fb.m2c{color:var(--sea-d);font-weight:var(--w6)}
+.fb.m1c{color:var(--sun-text)}
+.fb.m0c{color:var(--coral-text)}
+
+.brand{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;margin:0 0 22px;padding:0 0 16px;border-bottom:1px solid var(--line)}
+.brand img,.endbrand img{border-radius:50%;flex:none}
+.logo{font-weight:800;letter-spacing:-.02em;font-size:1.25rem;line-height:1.2;color:var(--ink)}
+.logo span{color:#2176FF}
+.handle{font-size:.9375rem;color:var(--soft)}
+.ig{margin-left:auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 14px;border:1px solid #8D93A5;border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif}
+.ig:hover{border-color:var(--ink)}
+.ig svg{width:18px;height:18px;flex:none}
+.sfoot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;margin:30px 0 0;padding:12px 0 0;border-top:1px solid var(--line);font-size:.875rem;color:var(--soft)}
+.sfoot .logo{font-size:.9375rem}
+.endbrand{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;margin:8px 0 22px;padding:16px;background:#fff;border:1px solid #B9BFCB;border-radius:8px}
+.endbrand p{margin:0;font-size:.9375rem;color:var(--soft)}
+.exps{margin:14px 0 0}
+.exps[hidden]{display:none}
+.exps summary{display:inline-block;cursor:pointer;list-style:none;font:var(--w5) .9375rem/1.2 "Helvetica Neue",Helvetica,Arial,sans-serif;padding:10px 14px;border:1px solid #8D93A5;border-radius:6px;background:#fff;min-height:44px}
+.exps summary::-webkit-details-marker{display:none}
+.exps ol{list-style:none;margin:12px 0 0;padding:0}
+.exps li{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:0 8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.exps li:last-child{border-bottom:0}
+.exps .no{font-weight:var(--w6)}
+.exps p{margin:0}
+.kb{font-weight:var(--w6)}
+.exps .res{font-weight:var(--w6)}
+.exps .ok{color:var(--sea-d)}
+.exps .bad{color:var(--coral-text)}
+.exps .half{color:var(--sun-text)}
+.exps .ex{margin:2px 0 0}
+.exps .m{font-size:.9375rem;color:var(--soft);margin:2px 0 0}
+.prow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:22px 0 0}
+.pscore{margin:0;font-weight:var(--w6)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 22px}
+.score{font-weight:var(--w6);font-size:1.125rem;margin-left:4px}
+.note{font-size:.875rem;color:var(--soft);margin:0 0 22px;max-width:70ch}
+
+.keysheet h3{font-size:1.125rem;margin:22px 0 6px}
+.keysheet ol{list-style:none;margin:0;padding:0}
+.keysheet li{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:0 8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.keysheet li:last-child{border-bottom:0}
+.keysheet .a{font-weight:var(--w6);font-size:1.0625rem}
+.keysheet .bar2{color:var(--soft);font-weight:var(--w4);padding:0 6px}
+.keysheet .m,.keysheet .alt{font-size:.9375rem;color:var(--soft)}
+
+@media (max-width:560px){
+  main{padding:14px 10px 40px}
+  .q,.keysheet li{grid-template-columns:1.7rem minmax(0,1fr);gap:0 6px}
+  .orow{grid-template-columns:1.6rem minmax(0,1fr)}
+  .ochoices{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .head{flex-direction:column;align-items:flex-start;gap:2px}
+  .head .lv{text-align:left}
+  .gap{width:5.5em}
+}
+/* Print and PDF: one part per A4 page, answer key (answers only) on the last page. */
+@page{size:A4;margin:13mm 15mm}
+@media print{
+  html,body{background:#fff}
+  body{font-size:12pt}
+  .bar,.actions,.note,.fb,.skip,.pscore,.prow,.exps,.ig,.endbrand,.keysheet .m,.keysheet .kx{display:none !important}
+  main{padding:0;max-width:none}
+  .sheet{border:0;box-shadow:none;padding:0;margin:0;break-after:page;page-break-after:always}
+  .keysheet{display:block !important;break-before:page;break-after:auto;page-break-after:auto}
+  .brand{margin:0 0 8px;padding:0 0 8px}
+  .brand img{width:38px;height:38px}
+  .logo{font-size:12.5pt}
+  .handle{font-size:9.5pt}
+  .head{margin:0 0 8px;padding-bottom:4px}
+  .head h1,.head h2{font-size:15pt}
+  .head .lv{font-size:10pt}
+  .rubric p{font-size:11.5pt;line-height:1.45;margin:0 0 6px;max-width:none}
+  .exline{font-size:11.5pt;margin:2px 0 8px}
+  .ttl{font-size:13.5pt;margin:12px 0 6px}
+  .text p{font-size:12.5pt;line-height:2.2;margin:0 0 8px}
+  .gap,.slot{background:transparent !important;border-bottom:1.5px dotted #000 !important;color:transparent !important}
+  .gap{width:5.5em}.gap.wide{width:15em}
+  .stem{font-size:10.5pt}
+  .opts{margin:10px 0 0;gap:2px}
+  .orow{grid-template-columns:1.6rem minmax(0,1fr);break-inside:avoid}
+  .ochoices{gap:0 6px}
+  .opt{font-size:12pt;border:0 !important;color:#000 !important;font-weight:400 !important;min-height:0;padding:1px 2px;background:none}
+  .q{margin:0 0 16px;break-inside:avoid}
+  .q .no{font-size:12.5pt}
+  .first{font-size:12.5pt;margin:0 0 6px}
+  .key{font-size:11pt;padding:2px 12px;margin:0 0 4px}
+  .second{font-size:12.5pt;line-height:2.1}
+  .eg{border-bottom-width:1.5px}
+  .sfoot{margin:12px 0 0;padding:5px 0 0;font-size:8.5pt}
+  .sfoot .logo{font-size:9pt}
+  .keysheet h3{font-size:11pt;margin:10px 0 3px}
+  .keysheet ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 12px}
+  .keysheet ol.k4{grid-template-columns:1fr}
+  .keysheet li{grid-template-columns:1.8rem minmax(0,1fr);padding:3px 0;border:0}
+  .keysheet .a{font-size:12pt;font-weight:var(--w5)}
+  .keysheet h3{font-size:12.5pt}
+  .keysheet li{padding:5px 0}
+  body.nokey .keysheet{display:none !important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#paper">Skip to the paper</a>
+<header class="bar" id="bar" hidden><div class="bar-in" role="group" aria-label="Choose a test">
+  <div class="tabs" id="tabs" role="tablist" aria-label="Tests" hidden></div>
+  <label class="field" id="pick"><span>Test</span><select id="test"></select></label>
+  <button class="btn" id="prev" type="button">Previous</button>
+  <button class="btn" id="next" type="button">Next</button>
+</div></header>
+
+<main>
+  <div id="paper"></div>
+
+  <div class="actions">
+    <button class="btn main" id="check" type="button">Check the whole paper</button>
+    <button class="btn" id="showkey" type="button" aria-expanded="false" aria-controls="keysheet">Show answers</button>
+    <button class="btn" id="clear" type="button">Clear my answers</button>
+    <button class="btn" id="print" type="button">Print this test</button>
+    <span class="score" id="score" role="status" aria-live="polite"></span>
+  </div>
+  <p class="note">Parts 1 to 3 give one mark per question. Part 4 gives two marks per question, one for each half of the answer, and contractions count as two words. Spelling must be correct in Parts 2 to 4. If you wrote something different that is also correct, the key may simply be missing it.</p>
+
+  <article class="sheet keysheet" id="keysheet" hidden aria-label="Answer key"></article>
+  <div class="endbrand" id="endbrand"></div>
+</main>
+
+<script>
+var DATA = {"title":"Reading and Use of English","slug":"uoe-c1-sample","tests":[{"name":"Test 1","part1":{"title":"Crows never forget a face","text":"In 2006, a team of wildlife scientists in Seattle {{0}} out to discover whether crows could {{1}} between individual human faces. Wearing rubber masks, the researchers caught seven birds on the university campus, fitted them with identification rings and then released them unharmed.\n\nThe crows had clearly not forgiven them. For years afterwards, anyone who walked across the campus in one of the masks was met by birds {{2}} overhead and screaming furiously. Remarkably, the hostility spread well beyond the seven that had been caught. Young crows that had never seen the trap joined in, which suggests that the birds had {{3}} the information to their young and their neighbours. Meanwhile, people in a different mask were {{4}} entirely alone.\n\nThe study is now seen as one of the clearest {{5}} that crows remember individual people, and it has added to their {{6}} for intelligence. There is a practical {{7}} in all this, too: upset a crow, and its whole community may hold a {{8}} against you for years.","example":{"options":{"A":"set","B":"put","C":"made","D":"got"},"answer":"A"},"items":[{"q":1,"options":{"A":"recognise","B":"identify","C":"distinguish","D":"notice"},"answer":"C","category":"dependent preposition","tests":"distinguish between","why":"recognise, identify and notice all take a direct object and are never followed by between","explain":"We **distinguish between** two or more things when we can see how they are different. 'between' straight after the gap is the clue."},{"q":2,"options":{"A":"circling","B":"rotating","C":"spinning","D":"rolling"},"answer":"A","category":"meaning precision","tests":"birds circling overhead","why":"rotating and spinning mean turning round on the spot, and rolling means turning over along a surface","explain":"Birds that are **circling** fly round and round in the air above something. 'overhead' shows they are flying above the person."},{"q":3,"options":{"A":"taken in","B":"put off","C":"carried out","D":"passed on"},"answer":"D","category":"phrasal verb","tests":"pass on information to someone","why":"take in means understand or deceive, put off means discourage or delay, and carry out means perform a task","explain":"When you **pass on** information **to** someone, you give them what you know. The young birds learned about the mask from the others."},{"q":4,"options":{"A":"let","B":"left","C":"kept","D":"held"},"answer":"B","category":"fixed phrase","tests":"leave someone alone","why":"let alone is a different phrase meaning and certainly not, and we do not say kept alone or held alone in this sense","explain":"**Leave someone alone** means not bother or attack them. 'Meanwhile' shows the contrast with the people in the first mask."},{"q":5,"options":{"A":"displays","B":"exhibitions","C":"performances","D":"demonstrations"},"answer":"D","category":"meaning precision","tests":"a demonstration that something is true","why":"displays, exhibitions and performances are things put on for people to watch, and none of them can be followed by that to mean proof","explain":"A **demonstration that** something is true is clear evidence of it. Here it is evidence 'that crows remember individual people'."},{"q":6,"options":{"A":"prestige","B":"reputation","C":"status","D":"standing"},"answer":"B","category":"collocation","tests":"a reputation for a quality","why":"prestige, status and standing describe a position in society and are not followed by for and a quality","explain":"A **reputation for** something is what people generally believe about you. Crows are known 'for intelligence'."},{"q":7,"options":{"A":"signal","B":"alarm","C":"warning","D":"alert"},"answer":"C","category":"meaning precision","tests":"a warning as advice to be careful","why":"a signal, an alarm and an alert tell you that something is happening now; they are not advice about what to avoid","explain":"A **warning** tells you about a possible danger so you can avoid it. The sentence goes on to give the advice: do not 'upset a crow'."},{"q":8,"options":{"A":"grudge","B":"dislike","C":"spite","D":"envy"},"answer":"A","category":"collocation","tests":"hold a grudge against someone","why":"we feel a dislike for someone or act out of spite or envy, but only a grudge is held against someone","explain":"To **hold a grudge against** someone is to stay angry with them for a long time because of something they did. 'hold a' and 'against you' are the clues."}]},"part2":{"title":"A gentleman's umbrella","text":"Today it is hard to imagine a rainy London street {{0}} umbrellas, yet in the 1750s a man who carried one was likely to be laughed at. Umbrellas had been in use for centuries in China, but in Britain they were seen {{9}} something that only women carried, and a gentleman caught in a shower was expected to hire a carriage {{10}} of getting wet.\n\nThe man we have to thank {{11}} changing all this is Jonas Hanway, a merchant and traveller. Hanway, {{12}} seen umbrellas being used in Persia, could see no reason to get soaked in his own city. For some thirty years he carried one through the streets whatever the weather, {{13}} though passers-by shouted insults at him. Coach drivers, who depended on wet pedestrians for their living, were particularly hostile.\n\nBy the time Hanway died in 1786, however, the habit had begun to {{14}} hold, and within a generation umbrellas were {{15}} longer a joke. Few people could have predicted {{16}} quickly they would become an essential part of the British gentleman's wardrobe.","example":{"answer":"without"},"items":[{"q":9,"answer":["as"],"category":"dependent preposition","tests":"be seen as","explain":"We **see something as** something when that is how we think of it. Umbrellas were thought of as a woman's thing."},{"q":10,"answer":["instead"],"category":"fixed phrase","tests":"instead of + -ing","explain":"**Instead of + -ing** gives the thing that does not happen: a gentleman took a carriage and did not get wet. 'of getting' after the gap completes the phrase."},{"q":11,"answer":["for"],"category":"dependent preposition","tests":"thank someone for + -ing","explain":"We **thank someone for** what they did. 'thank' before the gap and 'changing' after it show the pattern."},{"q":12,"answer":["having"],"category":"auxiliary","tests":"having + past participle for an earlier action","explain":"**Having seen** means because he had already seen. It tells us what happened first: he saw umbrellas in Persia, then used one in London."},{"q":13,"answer":["even"],"category":"linker","tests":"even though for a strong contrast","explain":"**Even though** introduces a strong contrast: people shouted at him, but he still carried his umbrella. 'though' after the gap is the clue."},{"q":14,"answer":["take"],"category":"verb in a fixed phrase","tests":"take hold","explain":"When a habit or idea **takes hold**, it starts to become common and accepted. 'begun to' before the gap needs a verb."},{"q":15,"answer":["no"],"category":"negative","tests":"no longer","explain":"**No longer** means not any more. Umbrellas used to be a joke, as the first sentence says, but they stopped being one."},{"q":16,"answer":["how"],"category":"relative pronoun","tests":"how + adverb after predict","explain":"**How quickly** asks about the speed of the change. Nobody expected umbrellas to become normal so fast."}]},"part3":{"title":"The four-day week","text":"In 2022, more than sixty British companies took part in a six-month {{0}} of the four-day week. Staff worked one day fewer but kept their full salary, on condition that they remained just as {{17}} as before. When the scheme was announced, many {{18}} feared that deadlines would be missed and customers left waiting, but in most cases these concerns proved {{19}} in practice.\n\nBy the end of the six months, revenue had stayed roughly the same, while the number of days lost to illness had fallen {{20}} at most of the firms. Employees reported better sleep and lower levels of stress, and job {{21}} went up considerably. Perhaps most tellingly, the great majority of the firms chose to keep the new arrangement, a result which is likely to {{22}} the case for shorter hours.\n\nEconomists, however, remain {{23}} about the results. The companies volunteered to take part, they point out, so they were probably the ones most likely to succeed. Whether a shorter week would work in hospitals, schools or factories, where {{24}} is limited by long shifts and fixed opening hours, is another question altogether.","example":{"stem":"TRY","answer":"trial"},"items":[{"q":17,"stem":"PRODUCE","answer":["productive"],"change":"verb to adjective, -uce becomes -uctive","tests":"adjective after just as","explain":"'just as ... as before' needs an adjective. Produce becomes **productive**: staff had to get the same amount of work done."},{"q":18,"stem":"MANAGE","answer":["managers"],"change":"verb to person noun, plural","tests":"plural person noun after many","explain":"'Many' before the gap and 'feared' after it need people, so we use the person noun in the plural: **managers**."},{"q":19,"stem":"FOUND","answer":["unfounded"],"change":"verb to adjective, negative prefix","tests":"negative adjective after proved","explain":"'but' shows the fears were wrong, so we need a negative adjective. **Unfounded** means not based on facts."},{"q":20,"stem":"DRAMA","answer":["dramatically"],"change":"noun to adverb, -atic and -ally","tests":"adverb after had fallen","explain":"'had fallen' needs an adverb to say how much. Drama becomes dramatic and then **dramatically**, with -ally, not -ly."},{"q":21,"stem":"SATISFY","answer":["satisfaction"],"change":"verb to noun, y becomes action","tests":"noun in job satisfaction","explain":"'job' before the gap and 'went up' after it need a noun. **Job satisfaction** is how happy people are with their work."},{"q":22,"stem":"STRONG","answer":["strengthen"],"change":"adjective to verb, o becomes e and -then","tests":"verb after is likely to","explain":"'is likely to' needs a verb. Strong becomes the noun strength and then the verb **strengthen**: the result makes the argument stronger."},{"q":23,"stem":"CAUTION","answer":["cautious"],"change":"noun to adjective, -ion becomes -ious","tests":"adjective after remain","explain":"'remain' needs an adjective. **Cautious** means careful and not ready to believe something too quickly."},{"q":24,"stem":"FLEXIBLE","answer":["flexibility"],"change":"adjective to noun, -ible becomes -ibility","tests":"noun as subject after where","explain":"The gap is the subject of 'is limited', so we need a noun. **Flexibility** is the freedom to change when and how you work."}]},"part4":{"example":{"lead":"It's possible that Tom missed the last bus.","key":"MAY","gapped":"Tom ___ the last bus.","answer":"may have | missed"},"items":[{"q":25,"lead":"Our tour guide explained the history of the castle clearly.","key":"EXPLANATION","gapped":"Our tour guide gave us ___ the history of the castle.","answer":"a clear explanation | of","alts":[],"tests":"verb and adverb to adjective and noun","explain":"We can turn **explained clearly** into a noun phrase: she **gave us a clear explanation of** the history. An explanation is followed by 'of'."},{"q":26,"lead":"I was surprised when Daniel resigned.","key":"CAME","gapped":"Daniel's resignation ___ me.","answer":"came as | a surprise to","alts":[],"tests":"come as a surprise to someone","explain":"If something **comes as a surprise to** you, you did not expect it. 'resignation' is now the subject, so it is the thing that surprised me."},{"q":27,"lead":"The company didn't apologise for the mistake until hundreds of customers had complained.","key":"DID","gapped":"Not until hundreds of customers had complained ___ for the mistake.","answer":"did the company | apologise","alts":[],"tests":"inversion after not until","explain":"When a sentence begins with **Not until**, the auxiliary comes before the subject, as in a question: **did the company apologise**."},{"q":28,"lead":"My friends persuaded me not to buy the motorbike.","key":"TALKED","gapped":"My friends ___ the motorbike.","answer":"talked me out | of buying","alts":[],"tests":"talk someone out of + -ing","explain":"To **talk someone out of doing** something is to persuade them not to do it. After 'of' the verb takes -ing."},{"q":29,"lead":"I have two brothers, but neither of them lives nearby.","key":"WHOM","gapped":"I have two brothers, ___ nearby.","answer":"neither of whom | lives","alts":[],"tests":"neither of whom in a relative clause","explain":"After a comma, **neither of whom** joins the two ideas: I have two brothers, **neither of whom lives** nearby. Neither takes a singular verb."},{"q":30,"lead":"Because of the storm, we had to cancel the trip.","key":"ALTERNATIVE","gapped":"The storm left us ___ the trip.","answer":"with no alternative | but to cancel","alts":[],"tests":"leave someone with no alternative but to","explain":"**Leave someone with no alternative but to** do something means force them to do it: the storm **left us with no alternative but to cancel** the trip."}]}}]};
+var GAPRE = /\{\{(\d+)\}\}/g, KGAP = /_{3,}/;
+var NAMES = {part1:'Part 1', part2:'Part 2', part3:'Part 3', part4:'Part 4'};
+var RUB = {
+  part1: 'For questions 1 to 8, read the text below and decide which answer (A, B, C or D) best fits each gap. There is an example at the beginning (0).',
+  part2: 'For questions 9 to 16, read the text below and think of the word which best fits each gap. Use only one word in each gap. There is an example at the beginning (0).',
+  part3: 'For questions 17 to 24, read the text below. Use the word given in capitals after each gap to form a word that fits in the gap. There is an example at the beginning (0).'
+};
+var STORE = 'uoe_' + DATA.slug;
+var S = {set:0, ans:{}, key:false, checked:false};
+
+function el(t, c, x){ var n = document.createElement(t); if(c) n.className = c; if(x != null) n.textContent = x; return n; }
+function load(){ try{ var r = JSON.parse(localStorage.getItem(STORE) || '{}'); if(r.ans) S.ans = r.ans; if(typeof r.set === 'number' && DATA.tests[r.set]) S.set = r.set; }catch(e){} }
+function save(){ try{ localStorage.setItem(STORE, JSON.stringify({ans:S.ans, set:S.set})); }catch(e){} }
+function cur(){ return DATA.tests[S.set]; }
+function id(q){ return S.set + '-' + q; }
+function list(a){ return Array.isArray(a) ? a : (a ? [a] : []); }
+function parts(t){ return ['part1','part2','part3','part4'].filter(function(p){ return t[p]; }); }
+
+/* ---- marking ---- */
+function low(s){ return (s || '').toLowerCase().replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim(); }
+function norm(s){
+  s = low(s).replace(/\bcan't\b/g, 'cannot').replace(/\bwon't\b/g, 'will not').replace(/\bshan't\b/g, 'shall not')
+       .replace(/n't\b/g, ' not').replace(/'m\b/g, ' am').replace(/'re\b/g, ' are').replace(/'ve\b/g, ' have').replace(/'ll\b/g, ' will')
+       .replace(/\b(it|that|there|he|she|what|who|here)'s\b/g, '$1 is');
+  return s.replace(/[.,;:!?"|]/g, ' ').replace(/\bcan not\b/g, 'cannot').replace(/\s+/g, ' ').trim();
+}
+function markWord(it, text){ var c = low(text); if(!c) return 0; return list(it.answer).some(function(a){ return low(a) === c; }) ? 1 : 0; }
+function markK(it, text){
+  var c = norm(text); if(!c) return 0;
+  var acc = [it.answer].concat(it.alts || []), best = 0;
+  for(var i = 0; i < acc.length; i++){
+    if(c === norm(acc[i])) return 2;
+    var h = acc[i].split('|');
+    if(h.length === 2){
+      var a = norm(h[0]), b = norm(h[1]);
+      if((c + ' ').indexOf(a + ' ') === 0 || (c.length >= b.length && (' ' + c).slice(-(b.length + 1)) === ' ' + b)) best = 1;
+    }
+  }
+  return best;
+}
+function plainK(a){ return a.replace(/\s*\|\s*/g, ' '); }
+
+/* ---- rendering ---- */
+var PHOTO = 'data:image/jpeg;base64,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', IG = 'https://www.instagram.com/johnplusenglish/';
+var IGSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';
+function logo(){ var d = el('div', 'logo'); d.appendChild(document.createTextNode('john')); d.appendChild(el('span', null, 'plus')); d.appendChild(document.createTextNode('english')); return d; }
+function photo(size){ var i = document.createElement('img'); i.src = PHOTO; i.alt = 'John from johnplusenglish'; i.width = size; i.height = size; return i; }
+function igButton(){ var a = document.createElement('a'); a.className = 'ig'; a.href = IG; a.target = '_blank'; a.rel = 'noopener'; a.innerHTML = IGSVG; a.appendChild(document.createTextNode('Follow on Instagram')); return a; }
+function brandTop(){
+  var b = el('div', 'brand'); b.appendChild(photo(56));
+  var t = el('div'); t.appendChild(logo()); t.appendChild(el('div', 'handle', '@johnplusenglish')); b.appendChild(t);
+  b.appendChild(igButton()); return b;
+}
+function sheetFoot(){ var f = el('div', 'sfoot'); var l = logo(); l.setAttribute('aria-hidden', 'true'); f.appendChild(l); f.appendChild(el('span', null, '@johnplusenglish on Instagram')); return f; }
+function head(title, sub, h){ var d = el('div', 'head'); var t = el(h || 'h2', null, title); d.appendChild(t); d.appendChild(el('div', 'lv', sub)); return d; }
+function subline(){ return 'C1 Advanced' + (DATA.tests.length > 1 ? ', ' + (cur().name || 'Test ' + (S.set + 1)) : ''); }
+
+function exampleLine(pk, p){
+  var ex = p.example; if(!ex) return null;
+  var d = el('p', 'exline'); d.appendChild(el('b', null, 'Example: (0) '));
+  if(pk === 'part1'){
+    ['A','B','C','D'].forEach(function(L){ var s = el('span', 'exo', L + ' ' + ex.options[L]); if(L === ex.answer) s.style.fontWeight = '600'; d.appendChild(s); });
+    d.appendChild(el('span', 'exo', 'Answer: ' + ex.answer));
+  } else {
+    d.appendChild(document.createTextNode(ex.answer.toUpperCase ? ex.answer.toUpperCase() : ex.answer));
+    if(ex.stem) d.appendChild(document.createTextNode('  (from ' + ex.stem + ')'));
+  }
+  return d;
+}
+
+function passage(pk, p){
+  var box = el('div', 'text'), items = {}, ex = p.example || {};
+  (p.items || []).forEach(function(it){ items[String(it.q)] = it; });
+  String(p.text).split(/\n\s*\n/).forEach(function(par){
+    var P = el('p'), last = 0, m; GAPRE.lastIndex = 0;
+    while((m = GAPRE.exec(par))){
+      P.appendChild(document.createTextNode(par.slice(last, m.index)));
+      var n = m[1], it = items[n], W = el('span', 'gw');
+      P.appendChild(W);
+      W.appendChild(el('span', 'gn', '(' + n + ')'));
+      if(n === '0'){
+        var shown = pk === 'part1' ? (ex.options ? ex.options[ex.answer] : '') : (ex.answer || '');
+        W.appendChild(el('span', 'eg', shown));
+        if(pk === 'part3' && ex.stem){ W.appendChild(document.createTextNode(' ')); W.appendChild(el('span', 'stem', ex.stem)); }
+      } else if(pk === 'part1'){
+        var sl = el('span', 'slot'); sl.id = 'g-' + n; sl.textContent = it && S.ans[id(n)] ? it.options[S.ans[id(n)]] : '';
+        sl.setAttribute('aria-label', 'Gap ' + n); W.appendChild(sl);
+      } else {
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'gap'; inp.id = 'g-' + n; inp.value = S.ans[id(n)] || '';
+        inp.autocomplete = 'off'; inp.spellcheck = false; inp.setAttribute('autocapitalize', 'off');
+        inp.setAttribute('aria-label', 'Question ' + n + (it && it.stem ? ', from ' + it.stem : ''));
+        (function(nn, ii){
+          ii.addEventListener('input', function(){ fitGap(ii); S.ans[id(nn)] = ii.value; save(); ii.classList.remove('m0','m1','m2'); document.getElementById('score').textContent = ''; });
+          ii.addEventListener('keydown', function(e){ if(e.key !== 'Enter') return; e.preventDefault(); var all = Array.prototype.slice.call(document.querySelectorAll('#paper input.gap')), k = all.indexOf(ii); if(all[k + 1]) all[k + 1].focus(); });
+        })(n, inp);
+        W.appendChild(inp);
+        if(pk === 'part3' && it){ W.appendChild(document.createTextNode(' ')); W.appendChild(el('span', 'stem', it.stem)); }
+      }
+      last = m.index + m[0].length;
+    }
+    P.appendChild(document.createTextNode(par.slice(last)));
+    box.appendChild(P);
+  });
+  return box;
+}
+
+function options(p){
+  var wrap = el('div', 'opts');
+  p.items.forEach(function(it){
+    var n = String(it.q), row = el('div', 'orow'); row.appendChild(el('div', 'no', n));
+    var ch = el('div', 'ochoices'); ch.setAttribute('role', 'group'); ch.setAttribute('aria-label', 'Question ' + n);
+    ['A','B','C','D'].forEach(function(L){
+      var b = el('button', 'opt'); b.type = 'button'; b.dataset.q = n; b.dataset.l = L;
+      b.appendChild(el('b', null, L)); b.appendChild(document.createTextNode(it.options[L]));
+      b.setAttribute('aria-pressed', S.ans[id(n)] === L ? 'true' : 'false');
+      b.addEventListener('click', function(){
+        if(S.key) return;
+        S.ans[id(n)] = L; save();
+        Array.prototype.forEach.call(ch.children, function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); x.classList.remove('right','wrong'); });
+        var sl = document.getElementById('g-' + n); sl.textContent = it.options[L]; sl.classList.remove('m0','m1','m2');
+        document.getElementById('score').textContent = '';
+      });
+      ch.appendChild(b);
+    });
+    row.appendChild(ch); wrap.appendChild(row);
+  });
+  return wrap;
+}
+
+function kSentence(p, gapped, node){
+  var bits = gapped.split(KGAP);
+  if(bits[0] && bits[0].trim()) p.appendChild(document.createTextNode(bits[0].replace(/\s+$/, '') + ' '));
+  p.appendChild(node);
+  if(bits[1] && bits[1].trim()){ var tail = bits[1].replace(/^\s+/, ''); p.appendChild(document.createTextNode((/^[,.;:?!]/.test(tail) ? '' : ' ') + tail)); }
+}
+function keyBox(w){ var k = el('div', 'key'); k.appendChild(el('span', 'sr', 'Key word: ')); k.appendChild(document.createTextNode(w)); return k; }
+
+function part4(p){
+  var d = el('div');
+  var r = el('div', 'rubric'), rp = el('p');
+  rp.appendChild(document.createTextNode('For questions 25 to 30, complete the second sentence so that it has a similar meaning to the first sentence, using the word given. '));
+  rp.appendChild(el('b', null, 'Do not change the word given. '));
+  rp.appendChild(document.createTextNode('You must use between three and six words, including the word given. Here is an example (0).'));
+  r.appendChild(rp); d.appendChild(r);
+  var ex = p.example || {lead:'Nobody told me about the party until yesterday.', key:'FOUND', gapped:'I only ___ the party yesterday.', answer:'found out | about'};
+  var q0 = el('div', 'q'); q0.appendChild(el('div', 'no', '0')); var b0 = el('div', 'body');
+  b0.appendChild(el('p', 'first', ex.lead)); b0.appendChild(keyBox(ex.key));
+  var s0 = el('p', 'second'); kSentence(s0, ex.gapped, el('span', 'eg', plainK(ex.answer))); b0.appendChild(s0); q0.appendChild(b0); d.appendChild(q0);
+  p.items.forEach(function(it){
+    var n = String(it.q), q = el('div', 'q'); q.id = 'q-' + n; q.appendChild(el('div', 'no', n));
+    var b = el('div', 'body'); b.appendChild(el('p', 'first', it.lead)); b.appendChild(keyBox(it.key));
+    var inp = document.createElement('input'); inp.type = 'text'; inp.className = 'gap wide'; inp.id = 'g-' + n; inp.value = S.ans[id(n)] || '';
+    inp.autocomplete = 'off'; inp.spellcheck = false; inp.setAttribute('autocapitalize', 'off'); inp.setAttribute('aria-label', 'Question ' + n + ', your answer');
+    inp.setAttribute('aria-describedby', 'fb-' + n);
+    inp.addEventListener('input', function(){ fitGap(inp); S.ans[id(n)] = inp.value; save(); inp.classList.remove('m0','m1','m2'); var f = document.getElementById('fb-' + n); f.textContent = ''; f.className = 'fb'; document.getElementById('score').textContent = ''; });
+    var s = el('p', 'second'); kSentence(s, it.gapped, inp); b.appendChild(s);
+    var fb = el('p', 'fb'); fb.id = 'fb-' + n; b.appendChild(fb);
+    q.appendChild(b); d.appendChild(q);
+  });
+  return d;
+}
+
+function render(){
+  var t = cur(), paper = document.getElementById('paper'); paper.textContent = '';
+  parts(t).forEach(function(pk, i){
+    var p = t[pk], sh = el('article', 'sheet'); sh.setAttribute('aria-label', NAMES[pk]);
+    if(i === 0) sh.appendChild(brandTop());
+    var h = head(i === 0 ? (DATA.title || 'Reading and Use of English') + ', ' + NAMES[pk] : NAMES[pk], subline(), i === 0 ? 'h1' : 'h2');
+    if(i === 0){ h.firstChild.id = 'paper-title'; h.firstChild.tabIndex = -1; }
+    sh.appendChild(h);
+    if(pk === 'part4'){ sh.appendChild(part4(p)); }
+    else {
+      var r = el('div', 'rubric'); r.appendChild(el('p', null, RUB[pk])); sh.appendChild(r);
+      var e = exampleLine(pk, p); if(e) sh.appendChild(e);
+      if(p.title) sh.appendChild(el('p', 'ttl', p.title));
+      sh.appendChild(passage(pk, p));
+      if(pk === 'part1') sh.appendChild(options(p));
+    }
+    var row = el('div', 'prow'), pb = el('button', 'btn main pcheck', 'Check ' + NAMES[pk]); pb.type = 'button';
+    pb.addEventListener('click', function(){ checkPart(pk); });
+    var ps = el('p', 'pscore'); ps.id = 'ps-' + pk; ps.setAttribute('aria-live', 'polite');
+    row.appendChild(pb); row.appendChild(ps); sh.appendChild(row);
+    var ex = document.createElement('details'); ex.className = 'exps'; ex.id = 'ex-' + pk; ex.hidden = true; sh.appendChild(ex);
+    sh.appendChild(sheetFoot());
+    paper.appendChild(sh);
+  });
+  renderKey();
+  document.getElementById('score').textContent = '';
+  syncBar();
+}
+
+function renderKey(){
+  var t = cur(), k = document.getElementById('keysheet'); k.textContent = '';
+  k.appendChild(head('Answer key', subline()));
+  parts(t).forEach(function(pk){
+    var p = t[pk]; k.appendChild(el('h3', null, NAMES[pk]));
+    var ol = el('ol', pk === 'part4' ? 'k4' : null);
+    p.items.forEach(function(it){
+      var li = el('li'); li.appendChild(el('div', 'no', String(it.q)));
+      var b = el('div'), a = el('div', 'a');
+      if(pk === 'part1') a.textContent = it.answer + '  ' + it.options[it.answer];
+      else if(pk === 'part4'){ var h = it.answer.split('|'); a.appendChild(document.createTextNode(h[0].trim())); if(h[1]){ a.appendChild(el('span', 'bar2', '|')); a.appendChild(document.createTextNode(h[1].trim())); } }
+      else a.textContent = list(it.answer).join(' / ');
+      b.appendChild(a);
+      if(pk === 'part4' && it.alts && it.alts.length) b.appendChild(el('div', 'alt', 'Also accepted: ' + it.alts.map(plainK).join('; ')));
+      if(it.explain) b.appendChild(rich('div', 'kx', it.explain));
+      if(it.tests) b.appendChild(el('div', 'm', 'Tests: ' + it.tests));
+      if(it.why) b.appendChild(el('div', 'm', 'Why not the others: ' + it.why));
+      li.appendChild(b); ol.appendChild(li);
+    });
+    k.appendChild(ol);
+  });
+  k.appendChild(sheetFoot());
+  k.hidden = !(S.key || DATA.pdf);
+  var sk = document.getElementById('showkey'); sk.setAttribute('aria-expanded', S.key); sk.textContent = S.key ? 'Hide answers' : 'Show answers';
+  fill();
+}
+
+/* Show answers puts each answer in its gap; Hide answers gives the student's own work back. */
+function fill(){
+  var t = cur();
+  parts(t).forEach(function(pk){
+    t[pk].items.forEach(function(it){
+      var n = String(it.q), g = document.getElementById('g-' + n); if(!g) return;
+      g.classList.remove('m0','m1','m2');
+      if(pk === 'part1'){
+        g.textContent = S.key ? it.options[it.answer] : (S.ans[id(n)] ? it.options[S.ans[id(n)]] : '');
+        g.classList.toggle('shown', S.key);
+        Array.prototype.forEach.call(document.querySelectorAll('.opt[data-q="' + n + '"]'), function(b){
+          b.classList.remove('right','wrong'); b.disabled = S.key;
+          b.setAttribute('aria-pressed', S.key ? (b.dataset.l === it.answer ? 'true' : 'false') : (S.ans[id(n)] === b.dataset.l ? 'true' : 'false'));
+        });
+      } else {
+        g.value = S.key ? (pk === 'part4' ? plainK(it.answer) : list(it.answer)[0]) : (S.ans[id(n)] || '');
+        g.readOnly = S.key; g.classList.toggle('shown', S.key); fitGap(g);
+        if(pk === 'part4'){ var f = document.getElementById('fb-' + n); f.textContent = ''; f.className = 'fb'; }
+      }
+    });
+    var ps = document.getElementById('ps-' + pk); if(ps) ps.textContent = '';
+    var ex = document.getElementById('ex-' + pk); if(ex){ ex.hidden = true; ex.textContent = ''; }
+  });
+  if(S.key) document.getElementById('score').textContent = '';
+  document.getElementById('check').disabled = S.key;
+  Array.prototype.forEach.call(document.querySelectorAll('.pcheck'), function(b){ b.disabled = S.key; });
+}
+
+function checkPart(pk){
+    var t = cur(), sub = 0, pm = 0, marks = [];
+    t[pk].items.forEach(function(it){
+      var n = String(it.q), g = document.getElementById('g-' + n), v = S.ans[id(n)] || '', m;
+      if(pk === 'part1'){
+        m = v === it.answer ? 1 : 0; pm += 1;
+        Array.prototype.forEach.call(document.querySelectorAll('.opt[data-q="' + n + '"]'), function(b){
+          b.classList.remove('right','wrong');
+          if(b.dataset.l === it.answer) b.classList.add('right'); else if(b.dataset.l === v) b.classList.add('wrong');
+        });
+        g.classList.remove('m0','m1','m2'); g.classList.add(m ? 'm2' : 'm0');
+      } else if(pk === 'part4'){
+        m = markK(it, v); pm += 2;
+        g.classList.remove('m0','m1','m2'); g.classList.add('m' + m);
+        var f = document.getElementById('fb-' + n); f.className = 'fb m' + m + 'c';
+        f.textContent = m === 2 ? 'Correct. 2 marks' : ((v.trim() ? (m === 1 ? '1 mark out of 2. ' : 'Not quite. ') : 'No answer. ') + 'Answer: ' + plainK(it.answer));
+      } else {
+        m = markWord(it, v); pm += 1;
+        g.classList.remove('m0','m1','m2'); g.classList.add(m ? 'm2' : 'm0');
+        g.title = m ? 'Correct' : 'Answer: ' + list(it.answer).join(' / ');
+      }
+      sub += m;
+      marks.push({v: v, full: pk === 'part4' ? m === 2 : m === 1, part: pk === 'part4' && m === 1});
+    });
+    showExps(pk, marks);
+    var ps = document.getElementById('ps-' + pk); if(ps) ps.textContent = 'You scored ' + sub + ' out of ' + pm + '.';
+    return [sub, pm];
+}
+function check(){
+  var total = 0, max = 0;
+  parts(cur()).forEach(function(pk){ var r = checkPart(pk); total += r[0]; max += r[1]; });
+  document.getElementById('score').textContent = 'Whole paper: ' + total + ' out of ' + max + '.';
+}
+
+function ansText(pk, it){
+  if(pk === 'part1') return it.answer + ' ' + it.options[it.answer];
+  if(pk === 'part4') return plainK(it.answer);
+  return list(it.answer).join(' / ');
+}
+function yourText(pk, it, v){
+  if(!v) return 'no answer';
+  return pk === 'part1' ? v + ' ' + it.options[v] : v;
+}
+/* After a part is checked: each question with the student's answer, the right one and the explanation, wrong ones marked. */
+/* A gap keeps its printed width but grows when the answer in it is longer, so a revealed answer is never cut off. */
+function fitGap(g){ g.style.width = ''; if(g.scrollWidth > g.clientWidth + 1) g.style.width = (g.scrollWidth + 14) + 'px'; }
+function showExps(pk, marks){
+  var t = cur(), box = document.getElementById('ex-' + pk); if(!box) return;
+  box.textContent = '';
+  var wrong = marks.filter(function(m){ return !m.full; }).length;
+  box.appendChild(el('summary', null, 'See explanations for ' + NAMES[pk] + (wrong ? ' (' + wrong + ' to review)' : '')));
+  var ol = el('ol');
+  t[pk].items.forEach(function(it, i){
+    var mk = marks[i], li = el('li'); li.appendChild(el('div', 'no', String(it.q)));
+    var b = el('div'), r = el('p', 'res');
+    var cls = mk.full ? 'ok' : (mk.part ? 'half' : 'bad');
+    r.appendChild(el('span', cls, mk.full ? 'Right: ' : (mk.part ? 'Half right: ' : 'Not right: ')));
+    r.appendChild(document.createTextNode(mk.full ? (pk === 'part1' ? ansText(pk, it) : mk.v.trim()) : 'you wrote ' + yourText(pk, it, mk.v) + '. Answer: ' + ansText(pk, it)));
+    b.appendChild(r);
+    if(it.explain) b.appendChild(rich('p', 'ex', it.explain));
+    if(pk === 'part1' && it.why) b.appendChild(el('p', 'm', 'Why not the others: ' + it.why));
+    if(pk === 'part4' && it.alts && it.alts.length) b.appendChild(el('p', 'm', 'Also accepted: ' + it.alts.map(plainK).join('; ')));
+    li.appendChild(b); ol.appendChild(li);
+  });
+  box.appendChild(ol); box.hidden = false; box.open = wrong > 0 ? box.open : false;
+}
+
+/* Explanations mark key language with **double stars**: shown in a subtle bold, never italic. */
+function rich(tag, cls, s){
+  var n = el(tag, cls);
+  String(s || '').split(/\*\*/).forEach(function(part, i){ if(!part) return; n.appendChild(i % 2 ? el('b', 'kb', part) : document.createTextNode(part)); });
+  return n;
+}
+
+/* ---- controls ---- */
+function syncBar(){
+  var bar = document.getElementById('bar'); bar.hidden = DATA.tests.length < 2;
+  document.getElementById('test').value = String(S.set);
+  document.getElementById('prev').disabled = S.set <= 0;
+  document.getElementById('next').disabled = S.set >= DATA.tests.length - 1;
+  var few = DATA.tests.length <= 4;
+  document.getElementById('tabs').hidden = !few;
+  ['pick','prev','next'].forEach(function(x){ document.getElementById(x).hidden = few; });
+  Array.prototype.forEach.call(document.querySelectorAll('#tabs .tab'), function(tb, i){ tb.setAttribute('aria-selected', i === S.set ? 'true' : 'false'); });
+}
+function go(n){ S.set = n; S.key = false; save(); render(); window.scrollTo(0, 0); var h = document.getElementById('paper-title'); if(h) h.focus(); }
+(function(){
+  var sel = document.getElementById('test'), tabs = document.getElementById('tabs');
+  DATA.tests.forEach(function(t, i){
+    var o = el('option', null, t.name || ('Test ' + (i + 1))); o.value = String(i); sel.appendChild(o);
+    var b = el('button', 'tab', t.name || ('Test ' + (i + 1))); b.type = 'button'; b.setAttribute('role', 'tab'); b.addEventListener('click', function(){ if(i !== S.set) go(i); }); tabs.appendChild(b);
+  });
+  sel.addEventListener('change', function(){ go(parseInt(sel.value, 10)); });
+})();
+document.getElementById('prev').addEventListener('click', function(){ if(S.set > 0) go(S.set - 1); });
+document.getElementById('next').addEventListener('click', function(){ if(S.set < DATA.tests.length - 1) go(S.set + 1); });
+document.getElementById('check').addEventListener('click', check);
+document.getElementById('showkey').addEventListener('click', function(){ S.key = !S.key; renderKey(); });
+document.getElementById('clear').addEventListener('click', function(){
+  var t = cur(); S.key = false;
+  parts(t).forEach(function(pk){ t[pk].items.forEach(function(it){ delete S.ans[id(String(it.q))]; }); });
+  save(); render();
+});
+document.getElementById('print').addEventListener('click', function(){ window.print(); });
+
+(function(){ var e = document.getElementById('endbrand'); e.appendChild(photo(48)); var t = el('div'); t.appendChild(logo()); t.appendChild(el('p', null, 'Practice papers by John. More on Instagram at @johnplusenglish.')); e.appendChild(t); e.appendChild(igButton()); })();
+if(DATA.pdf){ document.body.classList.add('pdf'); if(DATA.nokey) document.body.classList.add('nokey'); try{ localStorage.removeItem(STORE); }catch(e){} }
+else load();
+render();
+</script>
+</body>
+</html>
