@@ -145,7 +145,7 @@ function summarise(pack, list, bp, all){
   if(S.weak && pct(S.parts[S.weak].score, S.parts[S.weak].max) === 100) S.weak = null;
   return S;
 }
-/* ---------- Progress: scoreboard, score by part, up next, mistakes, every paper, practice days ---------- */
+/* ---------- Progress: one results sheet. Ink on paper, hairline rules, one blue for "you are here". ---------- */
 var SVGNS = 'http://www.w3.org/2000/svg';
 function svgEl(tag, at){ var e = document.createElementNS(SVGNS, tag); for(var k in at) e.setAttribute(k, at[k]); return e; }
 var pgTip = null;
@@ -163,71 +163,90 @@ function bindTip(node, title, lines){
   node.addEventListener('pointerenter', on); node.addEventListener('focus', on);
   node.addEventListener('pointerleave', tipHide); node.addEventListener('blur', tipHide);
 }
-function still(){ return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+var PASS = 60; /* roughly the pass level, as a percentage */
 function heatStep(v){ return v < 50 ? 1 : v < 65 ? 2 : v < 80 ? 3 : v < 90 ? 4 : 5; }
 function paperHref(P){ return '/app/paper.html?id=' + encodeURIComponent(P.row.id); }
 function dayKey(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function pgSec(cls, title, sub){
+  var s = el('section', 'pg-sec' + (cls ? ' ' + cls : '')), h = el('div', 'pg-h');
+  s.setAttribute('aria-label', title); h.appendChild(el('h3', null, title)); if(sub) h.appendChild(el('span', null, sub)); s.appendChild(h);
+  return s;
+}
 
-function pgBoard(S){
-  var fin = S.papers.filter(function(P){ return P.nparts === 4; }), sc = fin.map(function(P){ return pct(P.score, P.max); });
-  var box = el('section', 'pg-board'); box.setAttribute('aria-label', 'Average score and trend');
-  var l = el('div'); l.appendChild(el('p', 'pg-eye', PACKS[S.pack].name));
-  var big = el('div', 'pg-big'), avg = S.max ? pct(S.score, S.max) : null, n = avg == null ? el('strong', null, 'No score yet') : el('b', 'num', String(avg));
-  big.appendChild(n); if(avg != null) big.appendChild(el('span', null, '%')); l.appendChild(big);
-  if(avg && !still()){ var t0 = null; requestAnimationFrame(function tick(ts){ if(t0 == null) t0 = ts; var k = Math.min(1, (ts - t0) / 700); n.textContent = Math.round(avg * (1 - Math.pow(1 - k, 3))); if(k < 1) requestAnimationFrame(tick); }); }
+/* Up next: the one thing to do now. */
+function pgNext(S){
+  var c = el('section', 'pg-next'); c.setAttribute('aria-label', 'Up next');
+  var P = S.papers.filter(function(x){ return x.nparts < 4; })[0], t = el('div', 'pg-next-t'), a = el('a', 'btn main');
+  t.appendChild(el('span', 'pg-lab', 'Up next'));
+  if(P){
+    var miss = PKS.filter(function(pk){ return !P.parts[pk]; })[0];
+    t.appendChild(el('h3', null, 'Paper ' + P.n + ' · ' + P.row.title));
+    t.appendChild(el('p', null, P.nparts ? P.nparts + ' of 4 parts checked. Part ' + (PKS.indexOf(miss) + 1) + ' is next.' : 'Not started yet. Four parts, 30 questions.'));
+    a.textContent = P.nparts ? 'Continue paper ' + P.n : 'Start paper ' + P.n; a.href = paperHref(P);
+  } else {
+    var low = S.papers.slice().sort(function(x, y){ return x.score / x.max - y.score / y.max; })[0];
+    t.appendChild(el('h3', null, 'All papers finished'));
+    t.appendChild(el('p', null, 'Your lowest score is Paper ' + low.n + ', ' + pct(low.score, low.max) + '%. Try it again to beat it.'));
+    a.textContent = 'Open paper ' + low.n; a.href = paperHref(low);
+  }
+  c.appendChild(t); c.appendChild(a);
+  return c;
+}
+/* The headline: average score on a 0 to 100 ruler, beside the score for each finished paper. */
+function pgTop(S, fin, sc){
+  var top = el('div', 'pg-top'), l = el('div', 'pg-score'), avg = S.max ? pct(S.score, S.max) : null;
+  l.appendChild(el('span', 'pg-lab', 'Average score'));
+  var big = el('p', 'pg-big');
+  if(avg == null) big.appendChild(el('strong', null, 'No score yet'));
+  else { big.appendChild(el('b', 'num', String(avg))); big.appendChild(el('span', null, '%')); }
+  l.appendChild(big);
+  var r = el('div', 'pg-ruler'); r.setAttribute('aria-hidden', 'true');
+  var pass = el('i', 'pass'); pass.style.left = PASS + '%'; r.appendChild(pass);
+  if(avg != null){ var me = el('i', 'me'); me.style.left = avg + '%'; r.appendChild(me); }
+  [['0', 0], ['Pass ' + PASS, PASS], ['100', 100]].forEach(function(x){ var s = el('span', x[1] === 0 ? 'a' : x[1] === 100 ? 'z' : null, x[0]); s.style.left = x[1] + '%'; r.appendChild(s); });
+  l.appendChild(r);
   var dl = el('p', 'pg-delta'), h = Math.min(5, Math.floor(sc.length / 2));
   if(h >= 1){
     var sum = function(a){ return a.reduce(function(x, y){ return x + y; }, 0); };
-    var df = Math.round(sum(sc.slice(-h)) / h - sum(sc.slice(0, h)) / h), since = h === 1 ? 'since your first paper' : 'since your first ' + h + ' papers';
-    dl.appendChild(el('b', null, df > 0 ? 'Up ' + df + (df === 1 ? ' point' : ' points') : df < 0 ? 'Down ' + (-df) + (df === -1 ? ' point' : ' points') : 'No change'));
-    dl.appendChild(document.createTextNode(since));
-  } else dl.appendChild(document.createTextNode(S.max ? 'Average score across the parts you have checked' : 'Check a part of any paper to see your score here'));
-  l.appendChild(dl);
-  var mini = el('div', 'pg-mini');
-  [[S.done + '/' + S.papers.length, 'papers finished'], [S.score + '/' + S.max, 'marks earned'], [sc.length ? Math.max.apply(null, sc) + '%' : '-', 'best paper']].forEach(function(m){
-    var d = el('div'); d.appendChild(el('b', 'num', m[0])); d.appendChild(el('span', null, m[1])); mini.appendChild(d);
-  });
-  l.appendChild(mini); box.appendChild(l);
-  var r = el('div'), th = el('div', 'pg-th'); th.appendChild(el('h3', null, 'Score by paper')); th.appendChild(el('span', null, 'Best attempt, finished papers')); r.appendChild(th);
-  var tr = el('div', 'pg-trend'); r.appendChild(tr); box.appendChild(r);
-  if(!fin.length){ tr.appendChild(el('p', 'empty', S.started ? 'Finish all four parts of a paper and it will show here.' : 'Your papers will show here as you finish them.')); return box; }
+    var df = Math.round(sum(sc.slice(-h)) / h - sum(sc.slice(0, h)) / h), since = h === 1 ? ' since your first paper' : ' since your first ' + h + ' papers';
+    dl.appendChild(el('b', df < 0 ? 'down' : null, df > 0 ? 'Up ' + df + (df === 1 ? ' point' : ' points') : df < 0 ? 'Down ' + (-df) + (df === -1 ? ' point' : ' points') : 'No change'));
+    dl.appendChild(document.createTextNode(since + '.'));
+  } else dl.textContent = S.max ? 'Across the parts you have checked so far.' : 'Check a part of any paper and your score shows here.';
+  l.appendChild(dl); top.appendChild(l);
+  var c = el('div', 'pg-chart'), hd = el('div', 'pg-h'); hd.appendChild(el('h3', null, 'Score by paper')); hd.appendChild(el('span', null, 'Finished papers, best attempt')); c.appendChild(hd);
+  var tr = el('div', 'pg-trend'); c.appendChild(tr); top.appendChild(c);
+  if(!fin.length){ tr.appendChild(el('p', 'pg-none', S.started ? 'Finish all four parts of a paper and it shows here.' : 'Each paper you finish adds a point to this graph.')); return top; }
   var lastW = 0;
   if(window.ResizeObserver) new ResizeObserver(function(){ var w = tr.clientWidth; if(w && Math.abs(w - lastW) > 1){ lastW = w; drawTrend(tr, S, fin); } }).observe(tr);
   else setTimeout(function(){ drawTrend(tr, S, fin); }, 0);
-  return box;
+  return top;
 }
 function drawTrend(box, S, fin){
   box.textContent = '';
-  var W = Math.max(280, box.clientWidth), H = 250, l = 34, rt = 18, t = 22, b = 30, n = S.papers.length;
+  var W = Math.max(280, box.clientWidth), H = 230, l = 30, rt = 16, t = 24, b = 28, n = S.papers.length;
+  var INK = '#0B0D12', SOFT = '#6B7185', RULE = '#E3E6EC', SKY = '#2176FF';
   var pts = fin.map(function(P){ return {P: P, v: pct(P.score, P.max)}; });
   var lo = Math.min(40, Math.floor(Math.min.apply(null, pts.map(function(q){ return q.v; })) / 20) * 20);
   function X(i){ return l + (n === 1 ? (W - l - rt) / 2 : (i - 1) * (W - l - rt) / (n - 1)); }
   function Y(v){ return t + (100 - v) * (H - t - b) / (100 - lo); }
   var s = svgEl('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Score for each finished paper: ' + pts.map(function(q){ return 'Paper ' + q.P.n + ' ' + q.v + '%'; }).join(', ')});
-  var defs = svgEl('defs', {}), g = svgEl('linearGradient', {id: 'pg-ar-' + S.pack, x1: 0, y1: 0, x2: 0, y2: 1});
-  g.appendChild(svgEl('stop', {offset: '0', 'stop-color': '#6AA6FF', 'stop-opacity': '.42'})); g.appendChild(svgEl('stop', {offset: '1', 'stop-color': '#6AA6FF', 'stop-opacity': '0'}));
-  defs.appendChild(g); s.appendChild(defs);
-  function txt(x, y, a, v, at){ var e = svgEl('text', Object.assign({x: x, y: y, 'text-anchor': a, fill: '#A3ACC2', 'font-size': 11.5, 'font-family': 'Inter,sans-serif'}, at || {})); e.textContent = v; s.appendChild(e); return e; }
-  for(var v = lo; v <= 100; v += 20){ s.appendChild(svgEl('line', {x1: l, x2: W - rt, y1: Y(v), y2: Y(v), stroke: 'rgba(255,255,255,.09)', 'stroke-width': 1})); txt(l - 8, Y(v) + 4, 'end', v); }
-  if(lo <= 60){ s.appendChild(svgEl('line', {x1: l, x2: W - rt, y1: Y(60), y2: Y(60), stroke: 'rgba(255,255,255,.5)', 'stroke-width': 1, 'stroke-dasharray': '4 5'})); txt(W - rt, Y(60) + 15, 'end', 'Pass level, about 60%'); }
+  function txt(x, y, a, v, at){ var e = svgEl('text', Object.assign({x: x, y: y, 'text-anchor': a, fill: SOFT, 'font-size': 11.5, 'font-family': 'Inter,sans-serif'}, at || {})); e.textContent = v; s.appendChild(e); return e; }
+  for(var v = lo; v <= 100; v += 20){ s.appendChild(svgEl('line', {x1: l, x2: W - rt, y1: Y(v), y2: Y(v), stroke: v === lo ? INK : RULE, 'stroke-width': 1})); txt(l - 8, Y(v) + 4, 'end', v); }
+  if(lo < PASS){ s.appendChild(svgEl('line', {x1: l, x2: W - rt, y1: Y(PASS), y2: Y(PASS), stroke: SOFT, 'stroke-width': 1, 'stroke-dasharray': '2 4'})); txt(W - rt, Y(PASS) + 14, 'end', 'Pass, about ' + PASS + '%'); }
   var every = n > 24 ? 4 : n > 12 ? 2 : 1;
   for(var i = 1; i <= n; i += every) txt(X(i), H - 8, 'middle', i);
   var d = pts.map(function(q, i){ return (i ? 'L' : 'M') + X(q.P.n).toFixed(1) + ' ' + Y(q.v).toFixed(1); }).join(' '), last = pts[pts.length - 1];
-  if(pts.length > 1){
-    s.appendChild(svgEl('path', {d: d + ' L' + X(last.P.n).toFixed(1) + ' ' + (H - b) + ' L' + X(pts[0].P.n).toFixed(1) + ' ' + (H - b) + ' Z', fill: 'url(#pg-ar-' + S.pack + ')'}));
-    s.appendChild(svgEl('path', {d: d, fill: 'none', stroke: '#6AA6FF', 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', pathLength: 1, 'class': 'pg-tline'}));
-  }
-  pts.forEach(function(q){ s.appendChild(svgEl('circle', {cx: X(q.P.n), cy: Y(q.v), r: 3, fill: '#0F1320', stroke: '#6AA6FF', 'stroke-width': 2})); });
-  s.appendChild(svgEl('circle', {cx: X(last.P.n), cy: Y(last.v), r: 11, fill: 'rgba(106,166,255,.22)'}));
-  s.appendChild(svgEl('circle', {cx: X(last.P.n), cy: Y(last.v), r: 5, fill: '#fff', stroke: '#6AA6FF', 'stroke-width': 2}));
-  txt(Math.max(l + 14, Math.min(X(last.P.n), W - rt - 14)), Y(last.v) - 16, 'middle', last.v + '%', {fill: '#fff', 'font-size': 13, 'font-weight': 600, 'font-family': 'Outfit,sans-serif'});
-  var cross = svgEl('line', {y1: t, y2: H - b, stroke: 'rgba(255,255,255,.4)', 'stroke-width': 1, visibility: 'hidden'}), hot = svgEl('circle', {r: 6, fill: '#fff', stroke: '#6AA6FF', 'stroke-width': 2, visibility: 'hidden'});
+  if(pts.length > 1) s.appendChild(svgEl('path', {d: d, fill: 'none', stroke: INK, 'stroke-width': 1.75, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', pathLength: 1, 'class': 'pg-tline'}));
+  pts.forEach(function(q){ if(q !== last) s.appendChild(svgEl('circle', {cx: X(q.P.n), cy: Y(q.v), r: 3, fill: '#fff', stroke: INK, 'stroke-width': 1.75})); });
+  s.appendChild(svgEl('circle', {cx: X(last.P.n), cy: Y(last.v), r: 5.5, fill: SKY, stroke: '#fff', 'stroke-width': 2}));
+  txt(Math.max(l + 14, Math.min(X(last.P.n), W - rt - 14)), Y(last.v) - 13, 'middle', last.v + '%', {fill: INK, 'font-size': 13, 'font-weight': 600, 'font-family': 'Outfit,sans-serif'});
+  var cross = svgEl('line', {y1: t, y2: H - b, stroke: INK, 'stroke-width': 1, visibility: 'hidden'}), hot = svgEl('circle', {r: 5.5, fill: SKY, stroke: '#fff', 'stroke-width': 2, visibility: 'hidden'});
   s.appendChild(cross); s.appendChild(hot);
   var hit = svgEl('rect', {x: l - 10, y: 0, width: W - l - rt + 20, height: H - b, fill: 'transparent'}); hit.style.cursor = 'pointer'; s.appendChild(hit);
   function near(e){ var bb = s.getBoundingClientRect(), mx = (e.clientX - bb.left) * W / bb.width, q0 = pts[0]; pts.forEach(function(q){ if(Math.abs(X(q.P.n) - mx) < Math.abs(X(q0.P.n) - mx)) q0 = q; }); return {q: q0, bb: bb}; }
   hit.addEventListener('pointermove', function(e){
     var r = near(e), q = r.q, bb = r.bb;
-    [['x1', X(q.P.n)], ['x2', X(q.P.n)]].forEach(function(a){ cross.setAttribute(a[0], a[1]); }); cross.setAttribute('visibility', 'visible');
+    cross.setAttribute('x1', X(q.P.n)); cross.setAttribute('x2', X(q.P.n)); cross.setAttribute('visibility', 'visible');
     hot.setAttribute('cx', X(q.P.n)); hot.setAttribute('cy', Y(q.v)); hot.setAttribute('visibility', 'visible');
     tipShow('Paper ' + q.P.n + ' · ' + q.v + '%', [q.P.row.title, q.P.score + ' of ' + q.P.max + ' marks'], bb.left + X(q.P.n) * bb.width / W, bb.top + Y(q.v) * bb.height / H);
   });
@@ -235,79 +254,63 @@ function drawTrend(box, S, fin){
   hit.addEventListener('click', function(e){ location.href = paperHref(near(e).q.P); });
   box.appendChild(s);
 }
+function pgFacts(S, fin, sc, streak){
+  var dl = el('dl', 'pg-facts'), bi = sc.length ? sc.indexOf(Math.max.apply(null, sc)) : -1;
+  [['Papers finished', String(S.done), 'of ' + S.papers.length], ['Marks earned', String(S.score), 'of ' + S.max], ['Best paper', bi < 0 ? 'None yet' : sc[bi] + '%', bi < 0 ? '' : 'Paper ' + fin[bi].n], ['Day streak', String(streak), streak === 1 ? 'day' : 'days']].forEach(function(f){
+    var d = el('div'); d.appendChild(el('dt', null, f[0])); var dd = el('dd'); dd.appendChild(el('b', 'num', f[1])); if(f[2]) dd.appendChild(el('span', null, f[2])); d.appendChild(dd); dl.appendChild(d);
+  });
+  return dl;
+}
 function pgSpark(vals){
-  var s = svgEl('svg', {viewBox: '0 0 84 34', 'class': 'pg-spark', 'aria-hidden': 'true'});
+  var s = svgEl('svg', {viewBox: '0 0 84 30', 'class': 'pg-spark', 'aria-hidden': 'true'});
   if(vals.length < 2) return s;
   var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals); if(hi === lo){ lo -= 1; hi += 1; }
-  function Y(v){ return 29 - (v - lo) * 24 / (hi - lo); }
-  s.appendChild(svgEl('path', {d: vals.map(function(v, i){ return (i ? 'L' : 'M') + (4 + i * 76 / (vals.length - 1)).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' '), fill: 'none', stroke: '#2176FF', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'}));
-  s.appendChild(svgEl('circle', {cx: 80, cy: Y(vals[vals.length - 1]), r: 3.5, fill: '#2176FF', stroke: '#fff', 'stroke-width': 2}));
+  function Y(v){ return 25 - (v - lo) * 20 / (hi - lo); }
+  s.appendChild(svgEl('path', {d: vals.map(function(v, i){ return (i ? 'L' : 'M') + (4 + i * 74 / (vals.length - 1)).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' '), fill: 'none', stroke: '#0B0D12', 'stroke-width': 1.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'}));
+  s.appendChild(svgEl('circle', {cx: 78, cy: Y(vals[vals.length - 1]), r: 3, fill: '#2176FF', stroke: '#fff', 'stroke-width': 1.5}));
   return s;
 }
 function pgParts(S){
-  var c = el('section', 'pg-card'); c.setAttribute('aria-label', 'Score by part');
-  var hd = el('div', 'pg-head'); hd.appendChild(el('h3', null, 'Score by part')); hd.appendChild(el('span', null, 'Average and trend across your papers')); c.appendChild(hd);
-  var box = el('div');
+  var c = pgSec('pg-parts', 'Score by part', 'The mark on each bar is ' + PASS + '%, roughly the pass level');
   PKS.forEach(function(pk, j){
     var x = S.parts[pk], row = el('div', 'pg-part'), lab = el('div', 'pg-plab'), v = pct(x.score, x.max);
     lab.appendChild(el('b', null, 'Part ' + (j + 1))); lab.appendChild(el('span', null, PARTNAMES[pk]));
-    if(S.weak === pk) lab.appendChild(el('span', 'pg-flag', 'Work on this first'));
+    if(S.weak === pk) lab.appendChild(el('span', 'chip some', 'Work on this first'));
     row.appendChild(lab);
+    var tr = el('div', 'pg-track'), f = el('i'); f.style.width = (x.n ? Math.max(v, 1) : 0) + '%'; tr.appendChild(f); tr.appendChild(el('u')); row.appendChild(tr);
     row.appendChild(pgSpark(S.papers.filter(function(P){ return P.parts[pk]; }).map(function(P){ return pct(P.parts[pk].score, P.parts[pk].max); })));
     var pv = el('div', 'pg-pval');
-    if(x.n){ pv.appendChild(el('b', 'num', v + '%')); pv.appendChild(el('span', 'num', x.score + '/' + x.max)); } else pv.appendChild(el('span', 'none', 'Not tried'));
+    if(x.n){ pv.appendChild(el('b', 'num', v + '%')); pv.appendChild(el('span', 'num', x.score + ' of ' + x.max)); } else pv.appendChild(el('span', null, 'Not tried'));
     row.appendChild(pv);
-    var tr = el('div', 'pg-track'), f = el('i'); f.style.width = (x.n ? Math.max(v, 1) : 0) + '%'; tr.appendChild(f); tr.appendChild(el('u')); row.appendChild(tr);
     row.title = x.n ? x.score + ' out of ' + x.max + ' marks, from ' + x.n + (x.n === 1 ? ' paper' : ' papers') : 'Not tried yet';
-    box.appendChild(row);
+    c.appendChild(row);
   });
-  c.appendChild(box);
-  var note = el('p', 'pg-note'); note.appendChild(el('u')); note.appendChild(document.createTextNode('The mark on each bar is 60%, roughly the pass level.')); c.appendChild(note);
-  return c;
-}
-function pgNext(S){
-  var c = el('section', 'pg-next'); c.setAttribute('aria-label', 'Up next');
-  var P = S.papers.filter(function(x){ return x.nparts < 4; })[0], a = el('a', 'pg-btn');
-  c.appendChild(el('p', 'pg-eye', 'Up next'));
-  if(P){
-    var miss = PKS.filter(function(pk){ return !P.parts[pk]; })[0];
-    c.appendChild(el('h3', null, 'Paper ' + P.n + ' · ' + P.row.title));
-    c.appendChild(el('p', null, P.nparts ? P.nparts + ' of 4 parts checked. Part ' + (PKS.indexOf(miss) + 1) + ' is next.' : 'Not started yet. Four parts, 30 questions.'));
-    a.textContent = P.nparts ? 'Continue' : 'Start'; a.href = paperHref(P);
-  } else if(S.papers.length){
-    var low = S.papers.slice().sort(function(x, y){ return x.score / x.max - y.score / y.max; })[0];
-    c.appendChild(el('h3', null, 'All papers finished'));
-    c.appendChild(el('p', null, 'Your lowest score is Paper ' + low.n + ', ' + pct(low.score, low.max) + '%. Try it again to beat it.'));
-    a.textContent = 'Open Paper ' + low.n; a.href = paperHref(low);
-  } else { c.appendChild(el('h3', null, 'Papers coming soon')); return c; }
-  c.appendChild(a);
   return c;
 }
 function pgMistakes(S){
-  var c = el('section', 'pg-card'); c.setAttribute('aria-label', 'My Mistakes');
-  var tot = S.open + S.fixed, hd = el('div', 'pg-head'); hd.appendChild(el('h3', null, 'My Mistakes')); hd.appendChild(el('span', null, tot ? pct(S.fixed, tot) + '% fixed' : '')); c.appendChild(hd);
-  var top = el('div', 'pg-mk'); top.appendChild(el('b', 'num', String(S.open))); top.appendChild(el('span', null, 'still to fix')); c.appendChild(top);
-  var sp = el('div', 'pg-split'); sp.setAttribute('aria-hidden', 'true');
-  if(tot){ var a = el('i'), b = el('i'); a.style.flex = S.fixed; b.style.flex = S.open; sp.appendChild(a); sp.appendChild(b); }
-  c.appendChild(sp);
-  var k = el('div', 'pg-skey'); k.appendChild(el('span', null, S.fixed + ' fixed')); k.appendChild(el('span', null, S.open + ' to go')); c.appendChild(k);
+  var tot = S.open + S.fixed, c = pgSec('pg-mk', 'My Mistakes', tot ? S.fixed + ' of ' + tot + ' fixed' : '');
+  var top = el('p', 'pg-mk-n'); top.appendChild(el('b', 'num', String(S.open))); top.appendChild(el('span', null, 'still to fix')); c.appendChild(top);
   var ul = el('ul', 'pg-mlist');
   PKS.forEach(function(pk, j){ var li = el('li'); li.appendChild(el('span', null, 'Part ' + (j + 1) + ' · ' + PARTNAMES[pk])); li.appendChild(el('b', 'num', String(S.openBy[pk]))); ul.appendChild(li); });
   c.appendChild(ul);
-  var go = el('a', 'pg-btn dark', S.open ? 'Practise my mistakes' : 'Open My Mistakes'); go.href = '/app/mistakes.html?level=' + S.pack; c.appendChild(go);
+  var go = el('a', 'btn', S.open ? 'Practise my mistakes' : 'Open My Mistakes'); go.href = '/app/mistakes.html?level=' + S.pack; c.appendChild(go);
   return c;
 }
+function pgLegend(items){
+  var lg = el('div', 'pg-legend');
+  items.forEach(function(k){ var s = el('span'); s.appendChild(el('i', k[0])); s.appendChild(document.createTextNode(k[1])); lg.appendChild(s); });
+  return lg;
+}
 function pgHeat(S){
-  var c = el('section', 'pg-card'); c.setAttribute('aria-label', 'Every paper, every part');
-  var hd = el('div', 'pg-head'); hd.appendChild(el('h3', null, 'Every paper, every part')); hd.appendChild(el('span', null, 'Darker means a higher score')); c.appendChild(hd);
+  var c = pgSec('pg-heatsec', 'Every paper, every part', 'Darker means a higher score');
   var sc = el('div', 'pg-scroll'), g = el('div', 'pg-heat'), n = S.papers.length;
-  g.style.gridTemplateColumns = '58px repeat(' + n + ',minmax(28px,1fr))'; g.style.minWidth = (58 + n * 32) + 'px';
+  g.style.gridTemplateColumns = '52px repeat(' + n + ',minmax(26px,1fr))'; g.style.minWidth = (52 + n * 29) + 'px';
   g.appendChild(el('span'));
   S.papers.forEach(function(P){ g.appendChild(el('span', 'hx num', String(P.n))); });
   PKS.forEach(function(pk, j){
     g.appendChild(el('span', 'hy', 'Part ' + (j + 1)));
     S.papers.forEach(function(P){
-      var x = P.parts[pk], v = x ? pct(x.score, x.max) : 0, a = el('a', 'pg-cell' + (x ? ' s' + heatStep(v) : ' none')); a.href = paperHref(P);
+      var x = P.parts[pk], v = x ? pct(x.score, x.max) : 0, a = el('a', 'pg-cell' + (x ? ' g' + heatStep(v) : ' none')); a.href = paperHref(P);
       var res = x ? x.score + ' of ' + x.max + ' (' + v + '%)' : 'Not tried yet';
       a.setAttribute('aria-label', 'Paper ' + P.n + ', Part ' + (j + 1) + ': ' + res);
       bindTip(a, 'Paper ' + P.n + ' · Part ' + (j + 1), [P.row.title, res]);
@@ -315,44 +318,50 @@ function pgHeat(S){
     });
   });
   sc.appendChild(g); c.appendChild(sc);
-  var lg = el('div', 'pg-legend');
-  [['s1', 'Under 50%'], ['s2', '50 to 64%'], ['s3', '65 to 79%'], ['s4', '80 to 89%'], ['s5', '90% or more'], ['none', 'Not tried yet']].forEach(function(k){ var s = el('span'); s.appendChild(el('i', k[0])); s.appendChild(document.createTextNode(k[1])); lg.appendChild(s); });
-  c.appendChild(lg);
+  c.appendChild(pgLegend([['g1', 'Under 50%'], ['g2', '50 to 64%'], ['g3', '65 to 79%'], ['g4', '80 to 89%'], ['g5', '90% or more'], ['none', 'Not tried yet']]));
   return c;
 }
-/* Practice days: every part checked in this level, by day, over the last 12 weeks (Monday to Sunday columns). */
-function pgDays(S, attempts){
-  var c = el('section', 'pg-card'); c.setAttribute('aria-label', 'Practice days');
-  var hd = el('div', 'pg-head'); hd.appendChild(el('h3', null, 'Practice days')); hd.appendChild(el('span', null, 'Last 12 weeks')); c.appendChild(hd);
-  var per = {};
+/* Every part checked in this level, by day. Returns the tally for the last 12 weeks and the current streak. */
+function practice(S, attempts){
+  var per = {}, today = new Date(); today.setHours(0, 0, 0, 0);
   attempts.forEach(function(a){ if(!a.created_at || packOf(a.paper_id) !== S.pack) return; var k = dayKey(new Date(a.created_at)); per[k] = (per[k] || 0) + 1; });
-  var today = new Date(); today.setHours(0, 0, 0, 0);
-  var start = new Date(today); start.setDate(today.getDate() - ((today.getDay() + 6) % 7) - 77);
-  var cal = el('div', 'pg-cal'), parts = 0, days = 0;
-  for(var d = new Date(start), i = 0; i < 84; i++, d.setDate(d.getDate() + 1)){
-    var k = dayKey(d), v = per[k] || 0, cell = el('i');
-    if(d > today){ cell.className = 'future'; cal.appendChild(cell); continue; }
-    if(v){ cell.className = 's' + Math.min(5, v === 1 ? 2 : v === 2 ? 3 : v <= 4 ? 4 : 5); parts += v; days++; }
-    bindTip(cell, d.toLocaleDateString('en-IE', {weekday: 'short', day: 'numeric', month: 'short'}), [v ? v + (v === 1 ? ' part checked' : ' parts checked') : 'No practice']);
-    cal.appendChild(cell);
-  }
   var streak = 0, s = new Date(today);
   if(!per[dayKey(s)]) s.setDate(s.getDate() - 1);
   while(per[dayKey(s)]){ streak++; s.setDate(s.getDate() - 1); }
-  var act = el('div', 'pg-act'), sc = el('div', 'pg-scroll'); cal.setAttribute('aria-label', days + ' days practised in the last 12 weeks'); cal.setAttribute('role', 'img');
-  sc.appendChild(cal); act.appendChild(sc);
-  var st = el('div', 'pg-astats');
-  [[streak, streak === 1 ? 'day streak' : 'day streak'], [parts, parts === 1 ? 'part checked' : 'parts checked'], [days, days === 1 ? 'day practised' : 'days practised']].forEach(function(m){ var x = el('div'); x.appendChild(el('b', 'num', String(m[0]))); x.appendChild(el('span', null, m[1])); st.appendChild(x); });
-  act.appendChild(st); c.appendChild(act);
+  return {per: per, today: today, streak: streak};
+}
+function pgDays(S, A){
+  var c = pgSec('pg-days', 'Practice days', 'Last 12 weeks, Monday to Sunday');
+  var start = new Date(A.today); start.setDate(A.today.getDate() - ((A.today.getDay() + 6) % 7) - 77);
+  var cal = el('div', 'pg-cal'), parts = 0, days = 0;
+  for(var d = new Date(start), i = 0; i < 84; i++, d.setDate(d.getDate() + 1)){
+    var v = A.per[dayKey(d)] || 0, cell = el('i');
+    if(d > A.today){ cell.className = 'future'; cal.appendChild(cell); continue; }
+    if(v){ cell.className = 'g' + (v === 1 ? 2 : v === 2 ? 3 : v <= 4 ? 4 : 5); parts += v; days++; }
+    if(d.getTime() === A.today.getTime()) cell.classList.add('today');
+    bindTip(cell, d.toLocaleDateString('en-IE', {weekday: 'short', day: 'numeric', month: 'short'}), [v ? v + (v === 1 ? ' part checked' : ' parts checked') : 'No practice']);
+    cal.appendChild(cell);
+  }
+  cal.setAttribute('role', 'img'); cal.setAttribute('aria-label', days + (days === 1 ? ' day' : ' days') + ' practised in the last 12 weeks');
+  var act = el('div', 'pg-act'), sc = el('div', 'pg-scroll'); sc.appendChild(cal); act.appendChild(sc);
+  var p = el('p', 'pg-daysum');
+  [[days, days === 1 ? 'day practised' : 'days practised'], [parts, parts === 1 ? 'part checked' : 'parts checked']].forEach(function(m){ var x = el('span'); x.appendChild(el('b', 'num', String(m[0]))); x.appendChild(document.createTextNode(' ' + m[1])); p.appendChild(x); });
+  act.appendChild(p); c.appendChild(act);
   return c;
 }
 function progressView(S, attempts){
-  var pg = el('div', 'pg');
-  pg.appendChild(pgBoard(S));
-  var two = el('div', 'pg-two'), col = el('div', 'pg-col');
-  two.appendChild(pgParts(S)); col.appendChild(pgNext(S)); col.appendChild(pgMistakes(S)); two.appendChild(col); pg.appendChild(two);
-  if(S.papers.length) pg.appendChild(pgHeat(S));
-  pg.appendChild(pgDays(S, attempts));
+  var pg = el('div', 'pg'), A = practice(S, attempts);
+  if(!S.papers.length){ pg.appendChild(el('p', 'empty', 'Your papers will appear here.')); return pg; }
+  var fin = S.papers.filter(function(P){ return P.nparts === 4; }), sc = fin.map(function(P){ return pct(P.score, P.max); });
+  pg.appendChild(pgNext(S));
+  var sh = el('section', 'sheet pg-sheet'); sh.setAttribute('aria-label', 'Your progress in ' + PACKS[S.pack].level);
+  var hd = el('div', 'sheet-head'); hd.appendChild(el('h2', null, 'Progress')); hd.appendChild(el('span', 'lv', PACKS[S.pack].name)); sh.appendChild(hd);
+  sh.appendChild(pgTop(S, fin, sc));
+  sh.appendChild(pgFacts(S, fin, sc, A.streak));
+  var two = el('div', 'pg-two'); two.appendChild(pgParts(S)); two.appendChild(pgMistakes(S)); sh.appendChild(two);
+  sh.appendChild(pgHeat(S));
+  sh.appendChild(pgDays(S, A));
+  pg.appendChild(sh);
   return pg;
 }
 function paperCard(P){
