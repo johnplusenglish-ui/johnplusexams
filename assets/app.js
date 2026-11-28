@@ -158,13 +158,7 @@ function tipShow(title, lines, x, y){
   pgTip.style.top = (y - h - 12 < 8 ? y + 16 : y - h - 12) + 'px';
 }
 function tipHide(){ if(pgTip) pgTip.hidden = true; }
-function bindTip(node, title, lines){
-  function on(){ var b = node.getBoundingClientRect(); tipShow(title, lines, b.left + b.width / 2, b.top); }
-  node.addEventListener('pointerenter', on); node.addEventListener('focus', on);
-  node.addEventListener('pointerleave', tipHide); node.addEventListener('blur', tipHide);
-}
 var PASS = 60; /* roughly the pass level, as a percentage */
-function heatStep(v){ return v < 50 ? 1 : v < 65 ? 2 : v < 80 ? 3 : v < 90 ? 4 : 5; }
 function paperHref(P){ return '/app/paper.html?id=' + encodeURIComponent(P.row.id); }
 function dayKey(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function pgSec(cls, title, sub){
@@ -296,32 +290,7 @@ function pgMistakes(S){
   var go = el('a', 'btn', S.open ? 'Practise my mistakes' : 'Open My Mistakes'); go.href = '/app/mistakes.html?level=' + S.pack; c.appendChild(go);
   return c;
 }
-function pgLegend(items){
-  var lg = el('div', 'pg-legend');
-  items.forEach(function(k){ var s = el('span'); s.appendChild(el('i', k[0])); s.appendChild(document.createTextNode(k[1])); lg.appendChild(s); });
-  return lg;
-}
-function pgHeat(S){
-  var c = pgSec('pg-heatsec', 'Every paper, every part', 'Darker means a higher score');
-  var sc = el('div', 'pg-scroll'), g = el('div', 'pg-heat'), n = S.papers.length;
-  g.style.gridTemplateColumns = '52px repeat(' + n + ',minmax(26px,1fr))'; g.style.minWidth = (52 + n * 29) + 'px';
-  g.appendChild(el('span'));
-  S.papers.forEach(function(P){ g.appendChild(el('span', 'hx num', String(P.n))); });
-  PKS.forEach(function(pk, j){
-    g.appendChild(el('span', 'hy', 'Part ' + (j + 1)));
-    S.papers.forEach(function(P){
-      var x = P.parts[pk], v = x ? pct(x.score, x.max) : 0, a = el('a', 'pg-cell' + (x ? ' g' + heatStep(v) : ' none')); a.href = paperHref(P);
-      var res = x ? x.score + ' of ' + x.max + ' (' + v + '%)' : 'Not tried yet';
-      a.setAttribute('aria-label', 'Paper ' + P.n + ', Part ' + (j + 1) + ': ' + res);
-      bindTip(a, 'Paper ' + P.n + ' · Part ' + (j + 1), [P.row.title, res]);
-      g.appendChild(a);
-    });
-  });
-  sc.appendChild(g); c.appendChild(sc);
-  c.appendChild(pgLegend([['g1', 'Under 50%'], ['g2', '50 to 64%'], ['g3', '65 to 79%'], ['g4', '80 to 89%'], ['g5', '90% or more'], ['none', 'Not tried yet']]));
-  return c;
-}
-/* Every part checked in this level, by day. Returns the tally for the last 12 weeks and the current streak. */
+/* Days in a row with a part checked in this level, counting back from today (or yesterday). */
 function practice(S, attempts){
   var per = {}, today = new Date(); today.setHours(0, 0, 0, 0);
   attempts.forEach(function(a){ if(!a.created_at || packOf(a.paper_id) !== S.pack) return; var k = dayKey(new Date(a.created_at)); per[k] = (per[k] || 0) + 1; });
@@ -329,25 +298,6 @@ function practice(S, attempts){
   if(!per[dayKey(s)]) s.setDate(s.getDate() - 1);
   while(per[dayKey(s)]){ streak++; s.setDate(s.getDate() - 1); }
   return {per: per, today: today, streak: streak};
-}
-function pgDays(S, A){
-  var c = pgSec('pg-days', 'Practice days', 'Last 12 weeks, Monday to Sunday');
-  var start = new Date(A.today); start.setDate(A.today.getDate() - ((A.today.getDay() + 6) % 7) - 77);
-  var cal = el('div', 'pg-cal'), parts = 0, days = 0;
-  for(var d = new Date(start), i = 0; i < 84; i++, d.setDate(d.getDate() + 1)){
-    var v = A.per[dayKey(d)] || 0, cell = el('i');
-    if(d > A.today){ cell.className = 'future'; cal.appendChild(cell); continue; }
-    if(v){ cell.className = 'g' + (v === 1 ? 2 : v === 2 ? 3 : v <= 4 ? 4 : 5); parts += v; days++; }
-    if(d.getTime() === A.today.getTime()) cell.classList.add('today');
-    bindTip(cell, d.toLocaleDateString('en-IE', {weekday: 'short', day: 'numeric', month: 'short'}), [v ? v + (v === 1 ? ' part checked' : ' parts checked') : 'No practice']);
-    cal.appendChild(cell);
-  }
-  cal.setAttribute('role', 'img'); cal.setAttribute('aria-label', days + (days === 1 ? ' day' : ' days') + ' practised in the last 12 weeks');
-  var act = el('div', 'pg-act'), sc = el('div', 'pg-scroll'); sc.appendChild(cal); act.appendChild(sc);
-  var p = el('p', 'pg-daysum');
-  [[days, days === 1 ? 'day practised' : 'days practised'], [parts, parts === 1 ? 'part checked' : 'parts checked']].forEach(function(m){ var x = el('span'); x.appendChild(el('b', 'num', String(m[0]))); x.appendChild(document.createTextNode(' ' + m[1])); p.appendChild(x); });
-  act.appendChild(p); c.appendChild(act);
-  return c;
 }
 function progressView(S, attempts){
   var pg = el('div', 'pg'), A = practice(S, attempts);
@@ -359,8 +309,6 @@ function progressView(S, attempts){
   sh.appendChild(pgTop(S, fin, sc));
   sh.appendChild(pgFacts(S, fin, sc, A.streak));
   var two = el('div', 'pg-two'); two.appendChild(pgParts(S)); two.appendChild(pgMistakes(S)); sh.appendChild(two);
-  sh.appendChild(pgHeat(S));
-  sh.appendChild(pgDays(S, A));
   pg.appendChild(sh);
   return pg;
 }
