@@ -144,6 +144,28 @@ def build_reader():
     print("built app/paper.html and assets/paper-engine.js")
 
 
+def stamp():
+    """Stamp site.css and app.js with a version in every built page, so a change reaches visitors at once
+    and a page never pairs new code with old styles."""
+    ver = {}
+    for a in ("site.css", "app.js"):
+        ver[a] = hashlib.md5(open(os.path.join(ROOT, "assets", a), "rb").read()).hexdigest()[:8]
+    pages = glob.glob(os.path.join(ROOT, "*.html")) + glob.glob(os.path.join(ROOT, "*", "*.html")) + glob.glob(os.path.join(ROOT, "*", "*", "*.html"))
+    n = 0
+    for f in pages:
+        if "/private-demo/" in f or "/src/" in f or "/pages/" in f:
+            continue
+        h = open(f, encoding="utf-8").read()
+        h2 = h
+        for a, v in ver.items():
+            h2 = re.sub(r'"/assets/%s(\?v=\w+)?"' % re.escape(a), '"/assets/%s?v=%s"' % (a, v), h2)
+        if h2 != h:
+            open(f, "w", encoding="utf-8").write(h2)
+            n += 1
+    print("stamped site.css v=%s and app.js v=%s in %d pages" % (ver["site.css"], ver["app.js"], n))
+
+
 if __name__ == "__main__":
     build()
     build_reader()
+    stamp()
