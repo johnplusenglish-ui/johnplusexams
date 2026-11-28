@@ -9,8 +9,11 @@ var sb = LIVE ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKe
 var PAGE = document.body.getAttribute('data-page') || (document.getElementById('paper') ? 'app-paper' : '');
 /* One entry per level on sale. The key is the pack: paper ids start with it ('c1-01') and the PDFs sit in its folder. */
 var PACKS = {
-  c1: {name: 'C1 Advanced · Use of English', short: 'C1 Use of English', level: 'C1', page: '/c1-use-of-english/', products: ['c1', 'c1-student', 'c1-teacher']}
+  b2: {name: 'B2 First · Use of English', short: 'B2 Use of English', level: 'B2', page: '/pricing/', products: ['b2']},
+  c1: {name: 'C1 Advanced · Use of English', short: 'C1 Use of English', level: 'C1', page: '/c1-use-of-english/', products: ['c1', 'c1-student', 'c1-teacher']},
+  c2: {name: 'C2 Proficiency · Use of English', short: 'C2 Use of English', level: 'C2', page: '/pricing/', products: ['c2']}
 };
+/* b2 and c2 are not on sale yet: their sections only show for someone given access by hand. Point page at the level page once it exists. */
 
 function $(id){ return document.getElementById(id); }
 function el(t, c, x){ var n = document.createElement(t); if(c) n.className = c; if(x != null) n.textContent = x; return n; }
