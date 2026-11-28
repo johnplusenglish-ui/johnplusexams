@@ -136,27 +136,13 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 .keysheet .bar2{color:var(--soft);font-weight:var(--w4);padding:0 6px}
 .keysheet .m,.keysheet .alt{font-size:.9375rem;color:var(--soft)}
 
-/* Part 1: the options float at the bottom of the screen, under the text, until the text has been read; then they settle in their place.
-   Optional: the "Keep the options in view" switch turns it off. Phones show one question at a time. */
-.p1tog{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--soft);margin:0 0 14px;cursor:pointer;width:max-content;max-width:100%}
-.p1tog input{width:18px;height:18px;margin:0;accent-color:var(--ink)}
-.onav{display:none}
-@media screen{
-  .p1.float .slot{cursor:pointer}
-  .p1.float .slot.cur{background:var(--sky-light,#E8EEFF)}
-  .p1.float .opts{position:sticky;bottom:0;z-index:5;background:var(--paper);border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;box-shadow:0 -8px 20px -6px rgba(11,13,18,.18);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));margin:22px -12px 0;grid-template-columns:minmax(0,1fr);gap:5px;max-height:46vh;overflow:auto;overscroll-behavior:contain}
-  .p1.float .opts .orow{grid-template-columns:1.4rem minmax(0,1fr)}
-  .p1.float .opts .ochoices{gap:5px}
-  .p1.float .opts .opt{min-height:34px;padding:4px 7px;font-size:.875rem;overflow-wrap:normal;word-break:normal}
-  .p1.float .opts .orow.cur .no{color:var(--sky-d,#1559CC)}
-}
-@media screen and (max-width:700px){
-  .p1.float .opts{margin:18px -8px 0}
-  .p1.float .opts .orow{display:none}
-  .p1.float .opts .orow.cur{display:grid}
-  .p1.float .onav{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.85rem;color:var(--soft)}
-  .p1.float .onav button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:6px;min-width:44px;min-height:36px;font-size:1rem;color:var(--ink);cursor:pointer}
-  .p1.float .opts .ochoices{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media screen and (min-width:980px){
+  .sheet.p1{--p1w:min(1240px,calc(100vw - 32px));width:var(--p1w);margin-left:calc((100% - var(--p1w)) / 2)}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:start}
+  .split > .opts{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);margin:0;max-height:calc(100vh - 32px);overflow:auto;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);box-shadow:0 6px 18px rgba(11,13,18,.10);grid-template-columns:auto repeat(4,max-content);gap:6px 5px}
+  .split > .opts .orow{grid-column:1 / -1;grid-template-columns:subgrid}
+  .split > .opts .ochoices{grid-column:2 / -1;grid-template-columns:subgrid;gap:5px}
+  .split > .opts .opt{min-height:36px;padding:5px 9px;font-size:.875rem;white-space:nowrap;overflow-wrap:normal}
 }
 @media (max-width:560px){
   main{padding:14px 10px 40px}
