@@ -229,6 +229,9 @@ details p{margin-top:8px;color:var(--soft);max-width:var(--read)}
 .pg-plab .pg-flag{font:600 11px/1 var(--text);color:var(--sun-text);background:var(--sun-tint);padding:5px 8px;border-radius:99px}
 .pg-track{grid-column:1;position:relative;height:10px;border-radius:99px;background:var(--rule)}
 .pg-track i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--h3),var(--sky));transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.pg-track u{position:absolute;top:-4px;bottom:-4px;left:60%;width:2px;background:var(--ink);opacity:.35;border-radius:2px}
+.pg-note{margin-top:16px;font-size:12.5px;color:var(--faint);display:flex;align-items:center;gap:8px}
+.pg-note u{display:inline-block;width:2px;height:14px;background:var(--ink);opacity:.35;border-radius:2px}
 .pg-spark{grid-row:1/span 2;grid-column:2;width:84px;height:34px}
 .pg-pval{grid-row:1/span 2;grid-column:3;text-align:right}
 .pg-pval b{display:block;font:700 1.3rem/1 var(--head)}

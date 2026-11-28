@@ -209,6 +209,7 @@ function drawTrend(box, S, fin){
   defs.appendChild(g); s.appendChild(defs);
   function txt(x, y, a, v, at){ var e = svgEl('text', Object.assign({x: x, y: y, 'text-anchor': a, fill: '#A3ACC2', 'font-size': 11.5, 'font-family': 'Inter,sans-serif'}, at || {})); e.textContent = v; s.appendChild(e); return e; }
   for(var v = lo; v <= 100; v += 20){ s.appendChild(svgEl('line', {x1: l, x2: W - rt, y1: Y(v), y2: Y(v), stroke: 'rgba(255,255,255,.09)', 'stroke-width': 1})); txt(l - 8, Y(v) + 4, 'end', v); }
+  if(lo <= 60){ s.appendChild(svgEl('line', {x1: l, x2: W - rt, y1: Y(60), y2: Y(60), stroke: 'rgba(255,255,255,.5)', 'stroke-width': 1, 'stroke-dasharray': '4 5'})); txt(W - rt, Y(60) + 15, 'end', 'Pass level, about 60%'); }
   var every = n > 24 ? 4 : n > 12 ? 2 : 1;
   for(var i = 1; i <= n; i += every) txt(X(i), H - 8, 'middle', i);
   var d = pts.map(function(q, i){ return (i ? 'L' : 'M') + X(q.P.n).toFixed(1) + ' ' + Y(q.v).toFixed(1); }).join(' '), last = pts[pts.length - 1];
@@ -256,11 +257,12 @@ function pgParts(S){
     var pv = el('div', 'pg-pval');
     if(x.n){ pv.appendChild(el('b', 'num', v + '%')); pv.appendChild(el('span', 'num', x.score + '/' + x.max)); } else pv.appendChild(el('span', 'none', 'Not tried'));
     row.appendChild(pv);
-    var tr = el('div', 'pg-track'), f = el('i'); f.style.width = (x.n ? Math.max(v, 1) : 0) + '%'; tr.appendChild(f); row.appendChild(tr);
+    var tr = el('div', 'pg-track'), f = el('i'); f.style.width = (x.n ? Math.max(v, 1) : 0) + '%'; tr.appendChild(f); tr.appendChild(el('u')); row.appendChild(tr);
     row.title = x.n ? x.score + ' out of ' + x.max + ' marks, from ' + x.n + (x.n === 1 ? ' paper' : ' papers') : 'Not tried yet';
     box.appendChild(row);
   });
   c.appendChild(box);
+  var note = el('p', 'pg-note'); note.appendChild(el('u')); note.appendChild(document.createTextNode('The mark on each bar is 60%, roughly the pass level.')); c.appendChild(note);
   return c;
 }
 function pgNext(S){
