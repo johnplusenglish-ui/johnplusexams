@@ -93,6 +93,7 @@ function passage(pk, p){
       } else if(pk === 'part1'){
         var sl = el('span', 'slot'); sl.id = 'g-' + n; sl.textContent = it && S.ans[id(n)] ? it.options[S.ans[id(n)]] : '';
         sl.setAttribute('aria-label', 'Gap ' + n); W.appendChild(sl);
+        (function(nn){ sl.addEventListener('click', function(){ setCur(p, nn); }); })(n);
       } else {
         var inp = document.createElement('input');
         inp.type = 'text'; inp.className = 'gap'; inp.id = 'g-' + n; inp.value = S.ans[id(n)] || '';
@@ -113,10 +114,34 @@ function passage(pk, p){
   return box;
 }
 
+/* Floating options: on by default, remembered per browser. */
+function floatOn(){ try{ return localStorage.getItem('uoe_float') !== 'off'; }catch(e){ return true; } }
+function floatToggle(sh){
+  var l = el('label', 'p1tog'), c = document.createElement('input'); c.type = 'checkbox'; c.checked = floatOn();
+  c.addEventListener('change', function(){ try{ localStorage.setItem('uoe_float', c.checked ? 'on' : 'off'); }catch(e){} sh.classList.toggle('float', c.checked); });
+  l.appendChild(c); l.appendChild(document.createTextNode('Keep the options in view while I read')); return l;
+}
+/* The question shown on a phone, and highlighted everywhere: the gap tapped last, else the first one not answered. */
+var CUR = null;
+function setCur(p, n){
+  var qs = p.items.map(function(it){ return String(it.q); });
+  if(n == null){ n = qs.filter(function(q){ return !S.ans[id(q)]; })[0] || qs[0]; }
+  CUR = String(n);
+  qs.forEach(function(q){
+    var r = document.getElementById('or-' + q), g = document.getElementById('g-' + q);
+    if(r) r.classList.toggle('cur', q === CUR); if(g) g.classList.toggle('cur', q === CUR);
+  });
+  var lab = document.getElementById('onav-l'); if(lab) lab.textContent = 'Question ' + CUR;
+}
 function options(p){
-  var wrap = el('div', 'opts');
+  var wrap = el('div', 'opts'), qs = p.items.map(function(it){ return String(it.q); });
+  var nav = el('div', 'onav'), pv = el('button', null, '\u2039'), nx = el('button', null, '\u203a'), lab = el('span'); lab.id = 'onav-l';
+  pv.type = nx.type = 'button'; pv.setAttribute('aria-label', 'Previous question'); nx.setAttribute('aria-label', 'Next question');
+  pv.addEventListener('click', function(){ var k = qs.indexOf(CUR); setCur(p, qs[(k - 1 + qs.length) % qs.length]); });
+  nx.addEventListener('click', function(){ var k = qs.indexOf(CUR); setCur(p, qs[(k + 1) % qs.length]); });
+  nav.appendChild(pv); nav.appendChild(lab); nav.appendChild(nx); wrap.appendChild(nav);
   p.items.forEach(function(it){
-    var n = String(it.q), row = el('div', 'orow'); row.appendChild(el('div', 'no', n));
+    var n = String(it.q), row = el('div', 'orow'); row.id = 'or-' + n; row.appendChild(el('div', 'no', n));
     var ch = el('div', 'ochoices'); ch.setAttribute('role', 'group'); ch.setAttribute('aria-label', 'Question ' + n);
     ['A','B','C','D'].forEach(function(L){
       var b = el('button', 'opt'); b.type = 'button'; b.dataset.q = n; b.dataset.l = L;
@@ -128,6 +153,8 @@ function options(p){
         Array.prototype.forEach.call(ch.children, function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); x.classList.remove('right','wrong'); });
         var sl = document.getElementById('g-' + n); sl.textContent = it.options[L]; sl.classList.remove('m0','m1','m2');
         document.getElementById('score').textContent = '';
+        /* on a phone, move on to the next question still empty */
+        if(window.matchMedia && window.matchMedia('(max-width:700px)').matches){ var nxt = qs.slice(qs.indexOf(n) + 1).concat(qs).filter(function(q){ return !S.ans[id(q)]; })[0]; if(nxt) setCur(p, nxt); }
       });
       ch.appendChild(b);
     });
@@ -181,12 +208,10 @@ function render(){
     else {
       var r = el('div', 'rubric'); r.appendChild(el('p', null, RUB[pk].replace(/^For questions \d+ to \d+/, 'For questions ' + qrange(p)))); sh.appendChild(r);
       var e = exampleLine(pk, p); if(e) sh.appendChild(e);
-      /* Part 1 on a wide screen: the text on the left, the options beside it, staying in view while the text scrolls. */
-      var body = sh;
-      if(pk === 'part1'){ sh.classList.add('p1'); var sp = el('div', 'split'); body = el('div', 'split-text'); sp.appendChild(body); sh.appendChild(sp); }
-      if(p.title) body.appendChild(el('p', 'ttl', p.title));
-      body.appendChild(passage(pk, p));
-      if(pk === 'part1') sp.appendChild(options(p));
+      if(pk === 'part1'){ sh.classList.add('p1'); sh.classList.toggle('float', floatOn()); if(!DATA.pdf) sh.appendChild(floatToggle(sh)); }
+      if(p.title) sh.appendChild(el('p', 'ttl', p.title));
+      sh.appendChild(passage(pk, p));
+      if(pk === 'part1') sh.appendChild(options(p));
     }
     var row = el('div', 'prow'), pb = el('button', 'btn main pcheck', 'Check ' + NAMES[pk]); pb.type = 'button';
     pb.addEventListener('click', function(){ checkPart(pk); });
@@ -196,6 +221,7 @@ function render(){
     sh.appendChild(sheetFoot());
     paper.appendChild(sh);
   });
+  if(t.part1) setCur(t.part1, null);
   renderKey();
   document.getElementById('score').textContent = '';
   syncBar();
