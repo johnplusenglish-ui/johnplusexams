@@ -512,7 +512,7 @@ function reader(user){
       });
       DB.saveMarks(id, rows);
     });
-    var s = document.createElement('script'); s.src = '/assets/paper-engine.js?v=320a1ee6'; document.body.appendChild(s);
+    var s = document.createElement('script'); s.src = '/assets/paper-engine.js?v=442d7a1c'; document.body.appendChild(s);
   }).catch(function(){
     gate.innerHTML = '';
     gate.appendChild(document.createTextNode('This paper is part of a pack your account does not have yet. '));

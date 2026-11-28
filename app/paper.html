@@ -64,7 +64,12 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 /* An empty slot keeps a text baseline, so its line sits where a filled one does. */
 .slot:empty::before{content:"\200b"}
 .gap:focus{background:var(--sky-light);border-bottom-style:solid;border-bottom-color:var(--sky)}
-.slot{display:inline-block;min-width:6.5em;text-align:center;border-bottom:2px dotted var(--ink);padding:0 6px 2px;margin:0 4px 0 2px;line-height:1.25;font-weight:var(--w6)}
+.slot{appearance:none;display:inline-block;min-width:6.5em;text-align:center;border:0;border-bottom:2px dotted var(--ink);border-radius:0;background:transparent;color:var(--ink);cursor:pointer;padding:0 6px 2px;margin:0 4px 0 2px;font:var(--w6) 1.0625rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;vertical-align:baseline}
+.slot[aria-expanded="true"]{background:var(--sky-light);border-bottom-style:solid;border-bottom-color:var(--sky)}
+.slot:disabled{cursor:default;color:var(--ink);opacity:1}
+/* Tap a gap and its four options open here, under that line of the text. */
+.pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 12px;white-space:normal}
+.tip{color:var(--soft)}
 .eg{font-weight:var(--w6);display:inline-block;line-height:1.25;border-bottom:2px solid var(--ink);padding:0 10px 2px;margin:0 4px}
 .stem{display:inline-block;font-weight:var(--w6);letter-spacing:.04em;font-size:.9375rem;border:1.5px solid var(--ink);padding:0 8px;line-height:1.5;margin:0 2px}
 .m2{background:var(--sea-tint) !important;border-bottom:2px solid var(--sea-d) !important}
@@ -76,7 +81,7 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 .orow{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:0 8px;align-items:center}
 .orow .no{font-weight:var(--w6)}
 .ochoices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.opt{appearance:none;font:var(--w4) 1rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;min-width:0;overflow-wrap:anywhere}
+.opt{appearance:none;font:var(--w4) 1rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;min-width:0;overflow-wrap:break-word}
 .opt b{font-weight:var(--w6);margin-right:6px}
 .opt[aria-pressed="true"]{border:2px solid var(--ink);font-weight:var(--w6)}
 .opt.right{border:2px solid var(--sea-d);color:var(--sea-d);font-weight:var(--w6)}
@@ -137,20 +142,24 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 .keysheet .m,.keysheet .alt{font-size:.9375rem;color:var(--soft)}
 
 @media (max-width:560px){
-  main{padding:14px 10px 40px}
+  main{padding:0 0 40px}
+  .sheet{border-left:0;border-right:0;padding:20px 16px;margin:0 0 14px}
+  .actions,.note,.endbrand{margin-left:16px;margin-right:16px}
+  .pick{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .orow{grid-template-columns:minmax(0,1fr);gap:4px 0;margin:0 0 6px}
   .q,.keysheet li{grid-template-columns:1.7rem minmax(0,1fr);gap:0 6px}
-  .orow{grid-template-columns:1.6rem minmax(0,1fr)}
   .ochoices{grid-template-columns:repeat(2,minmax(0,1fr))}
   .head{flex-direction:column;align-items:flex-start;gap:2px}
   .head .lv{text-align:left}
   .gap{width:5.5em}
+  .slot{min-width:5.5em}
 }
 /* Print and PDF: one part per A4 page, answer key (answers only) on the last page. */
 @page{size:A4;margin:13mm 15mm}
 @media print{
   html,body{background:#fff}
   body{font-size:12pt}
-  .bar,.actions,.note,.fb,.skip,.pscore,.prow,.exps,.ig,.endbrand,.keysheet .m,.keysheet .kx{display:none !important}
+  .bar,.actions,.note,.fb,.skip,.pick,.tip,.pscore,.prow,.exps,.ig,.endbrand,.keysheet .m,.keysheet .kx{display:none !important}
   main{padding:0;max-width:none}
   .sheet{border:0;box-shadow:none;padding:0;margin:0;break-after:page;page-break-after:always}
   .keysheet{display:block !important;break-before:page;break-after:auto;page-break-after:auto}
@@ -221,7 +230,7 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 <script src="/assets/config.js"></script>
-<script src="/assets/app.js?v=9863045f"></script>
+<script src="/assets/app.js?v=28bd02ed"></script>
 
 </body>
 </html>

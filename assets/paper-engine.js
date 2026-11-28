@@ -91,8 +91,9 @@ function passage(pk, p){
         W.appendChild(el('span', 'eg', shown));
         if(pk === 'part3' && ex.stem){ W.appendChild(document.createTextNode(' ')); W.appendChild(el('span', 'stem', ex.stem)); }
       } else if(pk === 'part1'){
-        var sl = el('span', 'slot'); sl.id = 'g-' + n; sl.textContent = it && S.ans[id(n)] ? it.options[S.ans[id(n)]] : '';
-        sl.setAttribute('aria-label', 'Gap ' + n); W.appendChild(sl);
+        var sl = el('button', 'slot'); sl.type = 'button'; sl.id = 'g-' + n; sl.textContent = it && S.ans[id(n)] ? it.options[S.ans[id(n)]] : '';
+        sl.setAttribute('aria-expanded', 'false'); slotName(sl, n); W.appendChild(sl);
+        if(it) (function(nn, ii, ss, ww){ ss.addEventListener('click', function(){ togglePick(nn, ii, ss, ww); }); })(n, it, sl, W);
       } else {
         var inp = document.createElement('input');
         inp.type = 'text'; inp.className = 'gap'; inp.id = 'g-' + n; inp.value = S.ans[id(n)] || '';
@@ -113,22 +114,48 @@ function passage(pk, p){
   return box;
 }
 
+function slotName(sl, n){ sl.setAttribute('aria-label', 'Gap ' + n + ', ' + (sl.textContent || 'no answer yet') + '. Choose an answer'); }
+function choose(n, it, L){
+  if(S.key) return;
+  S.ans[id(n)] = L; save();
+  Array.prototype.forEach.call(document.querySelectorAll('.opt[data-q="' + n + '"]'), function(x){ x.setAttribute('aria-pressed', x.dataset.l === L ? 'true' : 'false'); x.classList.remove('right','wrong'); });
+  var sl = document.getElementById('g-' + n); sl.textContent = it.options[L]; sl.classList.remove('m0','m1','m2'); slotName(sl, n);
+  document.getElementById('score').textContent = '';
+}
+function optButton(n, it, L){
+  var b = el('button', 'opt'); b.type = 'button'; b.dataset.q = n; b.dataset.l = L;
+  b.appendChild(el('b', null, L)); b.appendChild(document.createTextNode(it.options[L]));
+  b.setAttribute('aria-pressed', S.ans[id(n)] === L ? 'true' : 'false');
+  return b;
+}
+function closePick(){
+  var o = document.querySelector('.pick'); if(!o) return;
+  var sl = document.getElementById('g-' + o.dataset.q); if(sl) sl.setAttribute('aria-expanded', 'false');
+  o.parentNode.removeChild(o);
+}
+/* The options for one gap, opened in the text right after that gap. The list under the text stays as well. */
+function togglePick(n, it, sl, W){
+  var open = document.querySelector('.pick'), was = open && open.dataset.q === n;
+  closePick(); if(was || S.key) return;
+  var box = el('span', 'pick'); box.dataset.q = n; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Options for gap ' + n);
+  ['A','B','C','D'].forEach(function(L){
+    var b = optButton(n, it, L), twin = document.querySelector('.ochoices .opt[data-q="' + n + '"][data-l="' + L + '"]');
+    if(twin){ b.className = twin.className; b.setAttribute('aria-pressed', twin.getAttribute('aria-pressed')); }
+    b.addEventListener('click', function(){ choose(n, it, L); closePick(); sl.focus(); });
+    box.appendChild(b);
+  });
+  W.parentNode.insertBefore(box, W.nextSibling);
+  sl.setAttribute('aria-expanded', 'true');
+}
+
 function options(p){
   var wrap = el('div', 'opts');
   p.items.forEach(function(it){
     var n = String(it.q), row = el('div', 'orow'); row.appendChild(el('div', 'no', n));
     var ch = el('div', 'ochoices'); ch.setAttribute('role', 'group'); ch.setAttribute('aria-label', 'Question ' + n);
     ['A','B','C','D'].forEach(function(L){
-      var b = el('button', 'opt'); b.type = 'button'; b.dataset.q = n; b.dataset.l = L;
-      b.appendChild(el('b', null, L)); b.appendChild(document.createTextNode(it.options[L]));
-      b.setAttribute('aria-pressed', S.ans[id(n)] === L ? 'true' : 'false');
-      b.addEventListener('click', function(){
-        if(S.key) return;
-        S.ans[id(n)] = L; save();
-        Array.prototype.forEach.call(ch.children, function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); x.classList.remove('right','wrong'); });
-        var sl = document.getElementById('g-' + n); sl.textContent = it.options[L]; sl.classList.remove('m0','m1','m2');
-        document.getElementById('score').textContent = '';
-      });
+      var b = optButton(n, it, L);
+      b.addEventListener('click', function(){ choose(n, it, L); });
       ch.appendChild(b);
     });
     row.appendChild(ch); wrap.appendChild(row);
@@ -183,7 +210,7 @@ function render(){
       var e = exampleLine(pk, p); if(e) sh.appendChild(e);
       if(p.title) sh.appendChild(el('p', 'ttl', p.title));
       sh.appendChild(passage(pk, p));
-      if(pk === 'part1') sh.appendChild(options(p));
+      if(pk === 'part1'){ r.appendChild(el('p', 'tip', 'Tap a gap to see its four options. They\'re all listed under the text too.')); sh.appendChild(options(p)); }
     }
     var row = el('div', 'prow'), pb = el('button', 'btn main pcheck', 'Check ' + NAMES[pk]); pb.type = 'button';
     pb.addEventListener('click', function(){ checkPart(pk); });
@@ -227,14 +254,14 @@ function renderKey(){
 
 /* Show answers puts each answer in its gap; Hide answers gives the student's own work back. */
 function fill(){
-  var t = cur();
+  var t = cur(); closePick();
   parts(t).forEach(function(pk){
     t[pk].items.forEach(function(it){
       var n = String(it.q), g = document.getElementById('g-' + n); if(!g) return;
       g.classList.remove('m0','m1','m2');
       if(pk === 'part1'){
         g.textContent = S.key ? it.options[it.answer] : (S.ans[id(n)] ? it.options[S.ans[id(n)]] : '');
-        g.classList.toggle('shown', S.key);
+        g.classList.toggle('shown', S.key); g.disabled = S.key; slotName(g, n);
         Array.prototype.forEach.call(document.querySelectorAll('.opt[data-q="' + n + '"]'), function(b){
           b.classList.remove('right','wrong'); b.disabled = S.key;
           b.setAttribute('aria-pressed', S.key ? (b.dataset.l === it.answer ? 'true' : 'false') : (S.ans[id(n)] === b.dataset.l ? 'true' : 'false'));

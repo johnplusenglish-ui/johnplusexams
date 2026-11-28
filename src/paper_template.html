@@ -62,7 +62,12 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 /* An empty slot keeps a text baseline, so its line sits where a filled one does. */
 .slot:empty::before{content:"\200b"}
 .gap:focus{background:var(--sky-light);border-bottom-style:solid;border-bottom-color:var(--sky)}
-.slot{display:inline-block;min-width:6.5em;text-align:center;border-bottom:2px dotted var(--ink);padding:0 6px 2px;margin:0 4px 0 2px;line-height:1.25;font-weight:var(--w6)}
+.slot{appearance:none;display:inline-block;min-width:6.5em;text-align:center;border:0;border-bottom:2px dotted var(--ink);border-radius:0;background:transparent;color:var(--ink);cursor:pointer;padding:0 6px 2px;margin:0 4px 0 2px;font:var(--w6) 1.0625rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;vertical-align:baseline}
+.slot[aria-expanded="true"]{background:var(--sky-light);border-bottom-style:solid;border-bottom-color:var(--sky)}
+.slot:disabled{cursor:default;color:var(--ink);opacity:1}
+/* Tap a gap and its four options open here, under that line of the text. */
+.pick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:4px 0 12px;white-space:normal}
+.tip{color:var(--soft)}
 .eg{font-weight:var(--w6);display:inline-block;line-height:1.25;border-bottom:2px solid var(--ink);padding:0 10px 2px;margin:0 4px}
 .stem{display:inline-block;font-weight:var(--w6);letter-spacing:.04em;font-size:.9375rem;border:1.5px solid var(--ink);padding:0 8px;line-height:1.5;margin:0 2px}
 .m2{background:var(--sea-tint) !important;border-bottom:2px solid var(--sea-d) !important}
@@ -74,7 +79,7 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 .orow{display:grid;grid-template-columns:2rem minmax(0,1fr);gap:0 8px;align-items:center}
 .orow .no{font-weight:var(--w6)}
 .ochoices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.opt{appearance:none;font:var(--w4) 1rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;min-width:0;overflow-wrap:anywhere}
+.opt{appearance:none;font:var(--w4) 1rem/1.25 "Helvetica Neue",Helvetica,Arial,sans-serif;min-height:44px;padding:8px 10px;border:1px solid #8D93A5;border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;text-align:left;min-width:0;overflow-wrap:break-word}
 .opt b{font-weight:var(--w6);margin-right:6px}
 .opt[aria-pressed="true"]{border:2px solid var(--ink);font-weight:var(--w6)}
 .opt.right{border:2px solid var(--sea-d);color:var(--sea-d);font-weight:var(--w6)}
@@ -135,20 +140,24 @@ main{max-width:var(--wide);margin:0 auto;padding:22px 16px 60px}
 .keysheet .m,.keysheet .alt{font-size:.9375rem;color:var(--soft)}
 
 @media (max-width:560px){
-  main{padding:14px 10px 40px}
+  main{padding:0 0 40px}
+  .sheet{border-left:0;border-right:0;padding:20px 16px;margin:0 0 14px}
+  .actions,.note,.endbrand{margin-left:16px;margin-right:16px}
+  .pick{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .orow{grid-template-columns:minmax(0,1fr);gap:4px 0;margin:0 0 6px}
   .q,.keysheet li{grid-template-columns:1.7rem minmax(0,1fr);gap:0 6px}
-  .orow{grid-template-columns:1.6rem minmax(0,1fr)}
   .ochoices{grid-template-columns:repeat(2,minmax(0,1fr))}
   .head{flex-direction:column;align-items:flex-start;gap:2px}
   .head .lv{text-align:left}
   .gap{width:5.5em}
+  .slot{min-width:5.5em}
 }
 /* Print and PDF: one part per A4 page, answer key (answers only) on the last page. */
 @page{size:A4;margin:13mm 15mm}
 @media print{
   html,body{background:#fff}
   body{font-size:12pt}
-  .bar,.actions,.note,.fb,.skip,.pscore,.prow,.exps,.ig,.endbrand,.keysheet .m,.keysheet .kx{display:none !important}
+  .bar,.actions,.note,.fb,.skip,.pick,.tip,.pscore,.prow,.exps,.ig,.endbrand,.keysheet .m,.keysheet .kx{display:none !important}
   main{padding:0;max-width:none}
   .sheet{border:0;box-shadow:none;padding:0;margin:0;break-after:page;page-break-after:always}
   .keysheet{display:block !important;break-before:page;break-after:auto;page-break-after:auto}
@@ -306,8 +315,9 @@ function passage(pk, p){
         W.appendChild(el('span', 'eg', shown));
         if(pk === 'part3' && ex.stem){ W.appendChild(document.createTextNode(' ')); W.appendChild(el('span', 'stem', ex.stem)); }
       } else if(pk === 'part1'){
-        var sl = el('span', 'slot'); sl.id = 'g-' + n; sl.textContent = it && S.ans[id(n)] ? it.options[S.ans[id(n)]] : '';
-        sl.setAttribute('aria-label', 'Gap ' + n); W.appendChild(sl);
+        var sl = el('button', 'slot'); sl.type = 'button'; sl.id = 'g-' + n; sl.textContent = it && S.ans[id(n)] ? it.options[S.ans[id(n)]] : '';
+        sl.setAttribute('aria-expanded', 'false'); slotName(sl, n); W.appendChild(sl);
+        if(it) (function(nn, ii, ss, ww){ ss.addEventListener('click', function(){ togglePick(nn, ii, ss, ww); }); })(n, it, sl, W);
       } else {
         var inp = document.createElement('input');
         inp.type = 'text'; inp.className = 'gap'; inp.id = 'g-' + n; inp.value = S.ans[id(n)] || '';
@@ -328,22 +338,48 @@ function passage(pk, p){
   return box;
 }
 
+function slotName(sl, n){ sl.setAttribute('aria-label', 'Gap ' + n + ', ' + (sl.textContent || 'no answer yet') + '. Choose an answer'); }
+function choose(n, it, L){
+  if(S.key) return;
+  S.ans[id(n)] = L; save();
+  Array.prototype.forEach.call(document.querySelectorAll('.opt[data-q="' + n + '"]'), function(x){ x.setAttribute('aria-pressed', x.dataset.l === L ? 'true' : 'false'); x.classList.remove('right','wrong'); });
+  var sl = document.getElementById('g-' + n); sl.textContent = it.options[L]; sl.classList.remove('m0','m1','m2'); slotName(sl, n);
+  document.getElementById('score').textContent = '';
+}
+function optButton(n, it, L){
+  var b = el('button', 'opt'); b.type = 'button'; b.dataset.q = n; b.dataset.l = L;
+  b.appendChild(el('b', null, L)); b.appendChild(document.createTextNode(it.options[L]));
+  b.setAttribute('aria-pressed', S.ans[id(n)] === L ? 'true' : 'false');
+  return b;
+}
+function closePick(){
+  var o = document.querySelector('.pick'); if(!o) return;
+  var sl = document.getElementById('g-' + o.dataset.q); if(sl) sl.setAttribute('aria-expanded', 'false');
+  o.parentNode.removeChild(o);
+}
+/* The options for one gap, opened in the text right after that gap. The list under the text stays as well. */
+function togglePick(n, it, sl, W){
+  var open = document.querySelector('.pick'), was = open && open.dataset.q === n;
+  closePick(); if(was || S.key) return;
+  var box = el('span', 'pick'); box.dataset.q = n; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Options for gap ' + n);
+  ['A','B','C','D'].forEach(function(L){
+    var b = optButton(n, it, L), twin = document.querySelector('.ochoices .opt[data-q="' + n + '"][data-l="' + L + '"]');
+    if(twin){ b.className = twin.className; b.setAttribute('aria-pressed', twin.getAttribute('aria-pressed')); }
+    b.addEventListener('click', function(){ choose(n, it, L); closePick(); sl.focus(); });
+    box.appendChild(b);
+  });
+  W.parentNode.insertBefore(box, W.nextSibling);
+  sl.setAttribute('aria-expanded', 'true');
+}
+
 function options(p){
   var wrap = el('div', 'opts');
   p.items.forEach(function(it){
     var n = String(it.q), row = el('div', 'orow'); row.appendChild(el('div', 'no', n));
     var ch = el('div', 'ochoices'); ch.setAttribute('role', 'group'); ch.setAttribute('aria-label', 'Question ' + n);
     ['A','B','C','D'].forEach(function(L){
-      var b = el('button', 'opt'); b.type = 'button'; b.dataset.q = n; b.dataset.l = L;
-      b.appendChild(el('b', null, L)); b.appendChild(document.createTextNode(it.options[L]));
-      b.setAttribute('aria-pressed', S.ans[id(n)] === L ? 'true' : 'false');
-      b.addEventListener('click', function(){
-        if(S.key) return;
-        S.ans[id(n)] = L; save();
-        Array.prototype.forEach.call(ch.children, function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); x.classList.remove('right','wrong'); });
-        var sl = document.getElementById('g-' + n); sl.textContent = it.options[L]; sl.classList.remove('m0','m1','m2');
-        document.getElementById('score').textContent = '';
-      });
+      var b = optButton(n, it, L);
+      b.addEventListener('click', function(){ choose(n, it, L); });
       ch.appendChild(b);
     });
     row.appendChild(ch); wrap.appendChild(row);
@@ -398,7 +434,7 @@ function render(){
       var e = exampleLine(pk, p); if(e) sh.appendChild(e);
       if(p.title) sh.appendChild(el('p', 'ttl', p.title));
       sh.appendChild(passage(pk, p));
-      if(pk === 'part1') sh.appendChild(options(p));
+      if(pk === 'part1'){ r.appendChild(el('p', 'tip', 'Tap a gap to see its four options. They\'re all listed under the text too.')); sh.appendChild(options(p)); }
     }
     var row = el('div', 'prow'), pb = el('button', 'btn main pcheck', 'Check ' + NAMES[pk]); pb.type = 'button';
     pb.addEventListener('click', function(){ checkPart(pk); });
@@ -442,14 +478,14 @@ function renderKey(){
 
 /* Show answers puts each answer in its gap; Hide answers gives the student's own work back. */
 function fill(){
-  var t = cur();
+  var t = cur(); closePick();
   parts(t).forEach(function(pk){
     t[pk].items.forEach(function(it){
       var n = String(it.q), g = document.getElementById('g-' + n); if(!g) return;
       g.classList.remove('m0','m1','m2');
       if(pk === 'part1'){
         g.textContent = S.key ? it.options[it.answer] : (S.ans[id(n)] ? it.options[S.ans[id(n)]] : '');
-        g.classList.toggle('shown', S.key);
+        g.classList.toggle('shown', S.key); g.disabled = S.key; slotName(g, n);
         Array.prototype.forEach.call(document.querySelectorAll('.opt[data-q="' + n + '"]'), function(b){
           b.classList.remove('right','wrong'); b.disabled = S.key;
           b.setAttribute('aria-pressed', S.key ? (b.dataset.l === it.answer ? 'true' : 'false') : (S.ans[id(n)] === b.dataset.l ? 'true' : 'false'));
