@@ -181,9 +181,12 @@ function render(){
     else {
       var r = el('div', 'rubric'); r.appendChild(el('p', null, RUB[pk].replace(/^For questions \d+ to \d+/, 'For questions ' + qrange(p)))); sh.appendChild(r);
       var e = exampleLine(pk, p); if(e) sh.appendChild(e);
-      if(p.title) sh.appendChild(el('p', 'ttl', p.title));
-      sh.appendChild(passage(pk, p));
-      if(pk === 'part1') sh.appendChild(options(p));
+      /* Part 1 on a wide screen: the text on the left, the options beside it, staying in view while the text scrolls. */
+      var body = sh;
+      if(pk === 'part1'){ sh.classList.add('p1'); var sp = el('div', 'split'); body = el('div', 'split-text'); sp.appendChild(body); sh.appendChild(sp); }
+      if(p.title) body.appendChild(el('p', 'ttl', p.title));
+      body.appendChild(passage(pk, p));
+      if(pk === 'part1') sp.appendChild(options(p));
     }
     var row = el('div', 'prow'), pb = el('button', 'btn main pcheck', 'Check ' + NAMES[pk]); pb.type = 'button';
     pb.addEventListener('click', function(){ checkPart(pk); });
