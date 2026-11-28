@@ -4,7 +4,8 @@
 (function(){
 'use strict';
 var CFG = window.JPX || {};
-var LIVE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey && window.supabase);
+var LOCAL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname); /* a local preview always runs the demo */
+var LIVE = !LOCAL && !!(CFG.supabaseUrl && CFG.supabaseAnonKey && window.supabase);
 var sb = LIVE ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
 var PAGE = document.body.getAttribute('data-page') || (document.getElementById('paper') ? 'app-paper' : '');
 /* One entry per level on sale. The key is the pack: paper ids start with it ('c1-01') and the PDFs sit in its folder. */
@@ -38,6 +39,7 @@ var Demo = {
   attempts: function(){ return Promise.resolve(LS.get('jpx-demo-attempts', [])); },
   saveAttempt: function(a){ var l = LS.get('jpx-demo-attempts', []); a.created_at = new Date().toISOString(); l.push(a); LS.set('jpx-demo-attempts', l); return Promise.resolve(); },
   mistakes: function(){ return Promise.resolve(LS.get('jpx-demo-mistakes', []).filter(function(m){ return !m.resolved; })); },
+  allMistakes: function(){ return Promise.resolve(LS.get('jpx-demo-mistakes', [])); },
   saveMarks: function(paperId, rows){
     var l = LS.get('jpx-demo-mistakes', []);
     rows.forEach(function(r){
@@ -60,6 +62,7 @@ var Live = {
   paper: function(id){ return sb.from('papers').select('data').eq('id', id).maybeSingle().then(function(r){ if(r.error) throw r.error; if(!r.data) throw new Error('locked'); return r.data.data; }); },
   attempts: function(){ return sb.from('attempts').select('paper_id,part,score,max,created_at').order('created_at').then(function(r){ if(r.error) throw r.error; return r.data; }); },
   saveAttempt: function(a){ return Live.user().then(function(u){ a.user_id = u.id; return sb.from('attempts').insert(a); }); },
+  allMistakes: function(){ return sb.from('mistakes').select('paper_id,part,q,given,resolved,updated_at').order('updated_at', {ascending: false}).then(function(r){ if(r.error) throw r.error; return r.data; }); },
   mistakes: function(){ return sb.from('mistakes').select('paper_id,part,q,given,updated_at').eq('resolved', false).order('updated_at', {ascending: false}).then(function(r){ if(r.error) throw r.error; return r.data; }); },
   saveMarks: function(paperId, rows){
     return Live.user().then(function(u){
@@ -118,59 +121,179 @@ function best(attempts){
   });
   return b;
 }
+var PKS = ['part1', 'part2', 'part3', 'part4'];
+var PARTNAMES = {part1: 'Multiple-choice cloze', part2: 'Open cloze', part3: 'Word formation', part4: 'Key word transformations'};
+function pct(s, m){ return m ? Math.round(100 * s / m) : 0; }
+/* Everything My papers shows for one level, worked out from the best attempt at each part. */
+function summarise(pack, list, bp, all){
+  var S = {pack: pack, papers: [], done: 0, started: 0, score: 0, max: 0, parts: {}, open: 0, fixed: 0};
+  PKS.forEach(function(pk){ S.parts[pk] = {score: 0, max: 0, n: 0}; });
+  list.forEach(function(p, i){
+    var P = {row: p, n: i + 1, score: 0, max: 0, nparts: 0, parts: {}};
+    PKS.forEach(function(pk){
+      var x = bp[p.id + '|' + pk]; if(!x) return;
+      P.parts[pk] = x; P.score += x.score; P.max += x.max; P.nparts++;
+      S.parts[pk].score += x.score; S.parts[pk].max += x.max; S.parts[pk].n++;
+    });
+    if(P.nparts){ S.started++; S.score += P.score; S.max += P.max; }
+    if(P.nparts === 4) S.done++;
+    S.papers.push(P);
+  });
+  all.forEach(function(m){ if(packOf(m.paper_id) !== pack) return; if(m.resolved) S.fixed++; else S.open++; });
+  var tried = PKS.filter(function(pk){ return S.parts[pk].n; });
+  S.weak = tried.length > 1 ? tried.slice().sort(function(x, y){ return S.parts[x].score / S.parts[x].max - S.parts[y].score / S.parts[y].max; })[0] : null;
+  if(S.weak && pct(S.parts[S.weak].score, S.parts[S.weak].max) === 100) S.weak = null;
+  return S;
+}
+function statTile(big, label, sub, href){
+  var d = el(href ? 'a' : 'div', 'stat'); if(href) d.href = href;
+  d.appendChild(el('b', null, String(big))); d.appendChild(el('span', null, label));
+  if(sub) d.appendChild(el('small', null, sub));
+  return d;
+}
+/* Score by paper: one bar per paper, as a percentage of the marks in the parts checked so far. */
+function scoreChart(S){
+  var fig = el('figure', 'chart');
+  fig.appendChild(el('h3', null, 'Score by paper'));
+  if(!S.started){ fig.appendChild(el('p', 'chart-empty', 'Check a part of any paper and your scores will build up here, paper by paper.')); return fig; }
+  var scroll = el('div', 'chart-scroll'), plot = el('div', 'bars');
+  plot.style.setProperty('--n', S.papers.length);
+  var ax = el('div', 'bars-axis'); ax.setAttribute('aria-hidden', 'true');
+  ['100%', '50%', '0'].forEach(function(t){ ax.appendChild(el('span', null, t)); }); 
+  S.papers.forEach(function(P, i){
+    var c = el('a', 'bcol'), v = pct(P.score, P.max); c.href = '/app/paper.html?id=' + encodeURIComponent(P.row.id);
+    var tip = 'Paper ' + P.n + ': ' + (P.nparts ? P.score + ' out of ' + P.max + ' (' + v + '%)' + (P.nparts < 4 ? ', ' + P.nparts + ' of 4 parts checked' : '') : 'not started');
+    c.setAttribute('aria-label', tip); c.setAttribute('data-tip', tip);
+    if(i < 2) c.classList.add('tip-l'); else if(i > S.papers.length - 3) c.classList.add('tip-r');
+    var area = el('span', 'barea');
+    if(P.nparts){
+      var bar = el('i', P.nparts < 4 ? 'part' : null); bar.style.height = Math.max(v, 2) + '%';
+      var val = el('span', 'bval', String(v)); val.style.bottom = Math.max(v, 2) + '%';
+      area.appendChild(val); area.appendChild(bar);
+    }
+    c.appendChild(area); c.appendChild(el('span', 'bx', String(P.n)));
+    plot.appendChild(c);
+  });
+  var wrap = el('div', 'chart-plot'); wrap.appendChild(ax); scroll.appendChild(plot); wrap.appendChild(scroll); fig.appendChild(wrap);
+  var cap = el('figcaption');
+  cap.appendChild(el('span', 'key full', 'All four parts checked')); cap.appendChild(el('span', 'key some', 'Some parts checked'));
+  cap.appendChild(el('span', null, 'Best score for each paper, in %.'));
+  fig.appendChild(cap);
+  return fig;
+}
+/* By part: which of the four parts is strongest and which needs work. */
+function partChart(S){
+  var fig = el('figure', 'chart');
+  fig.appendChild(el('h3', null, 'Score by part'));
+  var box = el('div', 'meters');
+  PKS.forEach(function(pk, j){
+    var x = S.parts[pk], row = el('div', 'meter'), v = pct(x.score, x.max);
+    var lab = el('div', 'mlab'); lab.appendChild(el('b', null, 'Part ' + (j + 1))); lab.appendChild(el('span', null, PARTNAMES[pk]));
+    if(S.weak === pk) lab.appendChild(el('em', 'flag', 'Work on this first'));
+    row.appendChild(lab);
+    var tr = el('i'); var fill = el('b'); fill.style.width = (x.n ? Math.max(v, 1) : 0) + '%'; tr.appendChild(fill); row.appendChild(tr);
+    row.appendChild(el('span', 'mval', x.n ? v + '%' : 'Not tried'));
+    row.title = x.n ? x.score + ' out of ' + x.max + ' marks, from ' + x.n + (x.n === 1 ? ' paper' : ' papers') : 'Not tried yet';
+    box.appendChild(row);
+  });
+  fig.appendChild(box);
+  return fig;
+}
+function paperCard(P){
+  var p = P.row, a = el('a', 'pcard'); a.href = '/app/paper.html?id=' + encodeURIComponent(p.id);
+  var top = el('span', 'ptop'); top.appendChild(el('span', 'eyebrow', 'Paper ' + P.n));
+  if(P.nparts === 4) top.appendChild(el('span', 'chip done', P.score + '/' + P.max));
+  else if(P.nparts) top.appendChild(el('span', 'chip some', P.nparts + ' of 4 parts'));
+  a.appendChild(top);
+  a.appendChild(el('span', 't', p.title));
+  a.appendChild(el('span', 'topics', p.topics || ''));
+  var bars = el('div', 'bars4');
+  PKS.forEach(function(pk, j){
+    var x = P.parts[pk], w = el('div', 'bar4'), lab = 'Part ' + (j + 1);
+    w.appendChild(el('span', null, lab)); w.appendChild(el('span', 'sc', x ? x.score + '/' + x.max : '\u00a0')); var i2 = el('i'); var bb = el('b'); bb.style.width = x ? (100 * x.score / x.max) + '%' : '0'; i2.appendChild(bb); w.appendChild(i2); bars.appendChild(w);
+  });
+  a.appendChild(bars);
+  return a;
+}
+function pdfRows(S){
+  var box = el('div', 'stack'); box.style.gap = '8px';
+  S.papers.forEach(function(P, i){
+    var p = P.row; if(!p.pdf_student && !p.pdf_teacher) return;
+    var row = el('div', 'pdfrow');
+    row.appendChild(el('span', null, 'Paper ' + P.n + ' · ' + p.title));
+    var btns = el('span', 'pdfbtns');
+    [['pdf_student', 'Student PDF'], ['pdf_teacher', 'Answer key PDF']].forEach(function(k){
+      if(!p[k[0]]) return;
+      var b = el('button', 'btn small', k[1]); b.type = 'button';
+      b.addEventListener('click', function(){ b.disabled = true; DB.pdf(p[k[0]]).then(function(u){ window.open(u, '_blank', 'noopener'); }).catch(function(){ alertMsg('That PDF could not be opened. Try again in a moment.'); }).then(function(){ b.disabled = false; }); });
+      btns.appendChild(b);
+    });
+    row.appendChild(btns); box.appendChild(row);
+  });
+  return box;
+}
+function levelPanel(S, acc){
+  var pack = S.pack, panel = el('div', 'stack');
+  var stats = el('div', 'stats');
+  stats.appendChild(statTile(S.done + '/' + S.papers.length, 'papers finished', S.started > S.done ? (S.started - S.done) + ' more in progress' : ''));
+  stats.appendChild(statTile(S.max ? pct(S.score, S.max) + '%' : '-', 'average score', S.max ? S.score + ' of ' + S.max + ' marks' : 'no parts checked yet'));
+  stats.appendChild(statTile(S.weak ? 'Part ' + (PKS.indexOf(S.weak) + 1) : '-', 'weakest part', S.weak ? PARTNAMES[S.weak] : 'shows after two parts'));
+  stats.appendChild(statTile(S.open, S.open === 1 ? 'mistake to fix' : 'mistakes to fix', S.fixed ? S.fixed + ' fixed so far' : (S.open ? 'Review them' : ''), S.open ? '/app/mistakes.html?level=' + pack : null));
+  panel.appendChild(stats);
+  var prog = el('section', 'sheet progress'); prog.setAttribute('aria-label', 'Your progress in ' + PACKS[pack].level);
+  var hd = el('div', 'sheet-head'); hd.appendChild(el('h2', null, 'Progress')); hd.appendChild(el('span', 'lv', PACKS[pack].level + ' · best attempt at each part')); prog.appendChild(hd);
+  var two = el('div', 'progress-grid'); two.appendChild(scoreChart(S)); two.appendChild(partChart(S)); prog.appendChild(two);
+  panel.appendChild(prog);
+  var sec = el('section'); sec.setAttribute('aria-label', PACKS[pack].name + ' papers');
+  var ph = el('div', 'sheet-head'); ph.style.borderColor = 'var(--ink)';
+  ph.appendChild(el('h2', null, 'Papers')); ph.appendChild(el('span', 'lv', 'Access until ' + fmtDate(acc[pack].expires))); sec.appendChild(ph);
+  var list = el('div', 'paperlist');
+  if(!S.papers.length) list.appendChild(el('p', 'empty', 'Your papers will appear here.'));
+  S.papers.forEach(function(P){ list.appendChild(paperCard(P)); });
+  sec.appendChild(list); panel.appendChild(sec);
+  if(S.papers.some(function(P){ return P.row.pdf_student || P.row.pdf_teacher; })){
+    var det = el('details', 'sheet pdfs'); det.appendChild(el('summary', null, 'PDFs to print (' + PACKS[pack].level + ')'));
+    det.appendChild(el('p', 'muted small', 'One part per A4 page. The answer key PDF has the explanations.'));
+    det.appendChild(pdfRows(S)); panel.appendChild(det);
+  }
+  return panel;
+}
 function home(user){
   $('dash').hidden = false; $('who').textContent = user.email;
   $('signout').addEventListener('click', function(){ DB.signOut().then(function(){ location.href = '/'; }); });
-  Promise.all([DB.entitlements(), DB.attempts(), DB.mistakes()]).then(function(r){
-    var acc = access(r[0]), attempts = r[1], mistakes = r[2], bp = best(attempts);
-    $('mcount').textContent = mistakes.length ? '(' + mistakes.length + ')' : '';
-    var done = {}; attempts.forEach(function(a){ done[a.paper_id] = 1; });
-    var tot = 0, mx = 0; Object.keys(bp).forEach(function(k){ tot += bp[k].score; mx += bp[k].max; });
-    var stats = $('stats');
-    [[Object.keys(done).length, 'papers started'], [mx ? Math.round(100 * tot / mx) + '%' : '-', 'best scores overall'], [mistakes.length, 'mistakes to fix']].forEach(function(s){
-      var d = el('div', 'stat'); d.appendChild(el('b', null, String(s[0]))); d.appendChild(el('span', null, s[1])); stats.appendChild(d);
-    });
+  Promise.all([DB.entitlements(), DB.attempts(), DB.allMistakes()]).then(function(r){
+    var acc = access(r[0]), attempts = r[1], all = r[2], bp = best(attempts);
+    var open = all.filter(function(m){ return !m.resolved; }).length;
+    $('mcount').textContent = open ? '(' + open + ')' : '';
     var owned = Object.keys(PACKS).filter(function(p){ return acc[p]; });
     if(!owned.length){ $('noaccess').hidden = false; return; }
     return Promise.all(owned.map(function(p){ return DB.index(p); })).then(function(lists){
-      var packsBox = $('packs'), pl = $('pdflist'), anyPdf = false;
-      owned.forEach(function(pack, n){
-        var list = lists[n], sec = el('section'), hid = pack + 'h';
-        sec.setAttribute('aria-labelledby', hid);
-        var hd = el('div', 'sheet-head'); hd.style.borderColor = 'var(--ink)';
-        var h2 = el('h2', null, PACKS[pack].name); h2.id = hid; h2.style.fontSize = '1.3rem'; hd.appendChild(h2);
-        hd.appendChild(el('span', 'lv', 'Access until ' + fmtDate(acc[pack].expires))); sec.appendChild(hd);
-        var box = el('div', 'paperlist'); sec.appendChild(box); packsBox.appendChild(sec);
-        if(!list.length){ box.appendChild(el('p', 'empty', 'Your papers will appear here.')); return; }
-        list.forEach(function(p, i){
-          var a = el('a', 'pcard'); a.href = '/app/paper.html?id=' + encodeURIComponent(p.id);
-          a.appendChild(el('span', 'eyebrow', 'Paper ' + (i + 1)));
-          a.appendChild(el('span', 't', p.title));
-          a.appendChild(el('span', 'topics', p.topics || ''));
-          var bars = el('div', 'bars4');
-          ['part1', 'part2', 'part3', 'part4'].forEach(function(pk, j){
-            var x = bp[p.id + '|' + pk], w = el('div', 'bar4'), lab = 'Part ' + (j + 1) + (x ? ' · ' + x.score + '/' + x.max : '');
-            w.appendChild(el('span', null, lab)); var i2 = el('i'); var bb = el('b'); bb.style.width = x ? (100 * x.score / x.max) + '%' : '0'; i2.appendChild(bb); w.appendChild(i2); bars.appendChild(w);
-          });
-          a.appendChild(bars); box.appendChild(a);
+      var sums = {}, tabs = $('lvtabs'), panel = $('lvpanel'), btns = {};
+      owned.forEach(function(p, n){ sums[p] = summarise(p, lists[n], bp, all); });
+      function show(pack, focus){
+        owned.forEach(function(p){ btns[p].setAttribute('aria-selected', p === pack ? 'true' : 'false'); btns[p].tabIndex = p === pack ? 0 : -1; });
+        panel.textContent = ''; panel.setAttribute('aria-labelledby', 'lvtab-' + pack); panel.appendChild(levelPanel(sums[pack], acc));
+        try{ localStorage.setItem('jpx-level', pack); }catch(e){}
+        if(focus) btns[pack].focus();
+      }
+      owned.forEach(function(p, n){
+        var S = sums[p], b = el('button', 'lvtab'); b.type = 'button'; b.id = 'lvtab-' + p; b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'lvpanel');
+        b.appendChild(el('b', null, PACKS[p].level)); b.appendChild(el('span', 'nm', PACKS[p].name.split(' · ')[0].replace(PACKS[p].level + ' ', '')));
+        b.appendChild(el('span', 'pr', S.papers.length ? S.done + ' of ' + S.papers.length + ' done' : 'Coming soon'));
+        var tr = el('i'); var f = el('u'); f.style.width = (S.papers.length ? 100 * S.done / S.papers.length : 0) + '%'; tr.appendChild(f); b.appendChild(tr);
+        b.addEventListener('click', function(){ show(p); });
+        b.addEventListener('keydown', function(e){
+          var d = e.key === 'ArrowRight' ? 1 : (e.key === 'ArrowLeft' ? -1 : 0); if(!d) return;
+          e.preventDefault(); show(owned[(n + d + owned.length) % owned.length], true);
         });
-        list.forEach(function(p, i){
-          var row = el('div', 'row'), first = !pl.children.length; anyPdf = true;
-          row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-top:' + (first ? '0' : '1px solid var(--rule)') + ';padding-top:' + (first ? '0' : '8px');
-          row.appendChild(el('span', null, (owned.length > 1 ? PACKS[pack].level + ' ' : '') + 'Paper ' + (i + 1) + ' · ' + p.title));
-          var btns = el('span'); btns.style.cssText = 'display:flex;gap:8px';
-          [['pdf_student', 'Student PDF'], ['pdf_teacher', 'Answer key PDF']].forEach(function(k){
-            if(!p[k[0]]) return;
-            var b = el('button', 'btn small', k[1]); b.type = 'button';
-            b.addEventListener('click', function(){ b.disabled = true; DB.pdf(p[k[0]]).then(function(u){ window.open(u, '_blank', 'noopener'); }).catch(function(){ alertMsg('That PDF could not be opened. Try again in a moment.'); }).then(function(){ b.disabled = false; }); });
-            btns.appendChild(b);
-          });
-          row.appendChild(btns); pl.appendChild(row);
-        });
+        btns[p] = b; tabs.appendChild(b);
       });
-      if(anyPdf) $('pdfsec').hidden = false;
+      tabs.hidden = owned.length < 2; $('lvwrap').hidden = false;
+      var saved = null; try{ saved = localStorage.getItem('jpx-level'); }catch(e){}
+      var last = attempts.length ? packOf(attempts[attempts.length - 1].paper_id) : null;
+      show(owned.indexOf(saved) >= 0 ? saved : (owned.indexOf(last) >= 0 ? last : owned[0]));
     });
-  }).catch(function(e){ $('stats').appendChild(el('p', 'msg err', 'Your papers could not be loaded. Check your connection and refresh.')); console.error(e); });
+  }).catch(function(e){ $('lvwrap').hidden = false; $('lvpanel').appendChild(el('p', 'msg err', 'Your papers could not be loaded. Check your connection and refresh.')); console.error(e); });
 }
 function alertMsg(t){ var m = el('p', 'msg err', t); document.querySelector('main').prepend(m); setTimeout(function(){ m.remove(); }, 5000); }
 
@@ -225,38 +348,94 @@ function sentenceFor(text, q, items, pk){
     return pk === 'part1' ? o.options[o.answer] : (Array.isArray(o.answer) ? o.answer[0] : o.answer);
   });
 }
+/* What a mistake was testing, in a few words, so repeated slips of one kind show up as a weak spot. */
+function topicOf(pk, it){
+  var t = pk === 'part3' ? String(it.change || '').split(',')[0] : (pk === 'part4' ? 'transformations' : String(it.category || ''));
+  t = t.trim() || 'other';
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
 function mistakesPage(user){
   var list = $('mlist');
   if(!user){ list.innerHTML = ''; var p = el('p', 'empty'); p.appendChild(document.createTextNode('Sign in to see your mistakes. ')); var a = el('a', null, 'Sign in'); a.href = '/app/'; p.appendChild(a); list.appendChild(p); return; }
-  DB.mistakes().then(function(ms){
-    if(!ms.length){ list.innerHTML = ''; list.appendChild(el('p', 'empty', 'No mistakes to fix. Check a part of any paper and anything you get wrong will appear here.')); return; }
+  DB.allMistakes().then(function(all){
+    var ms = all.filter(function(m){ return !m.resolved; }), fixed = all.length - ms.length;
+    if(!all.length){ list.innerHTML = ''; list.appendChild(el('p', 'empty', 'No mistakes to fix. Check a part of any paper and anything you get wrong will appear here.')); return; }
     var ids = Array.from(new Set(ms.map(function(m){ return m.paper_id; })));
     return Promise.all(ids.map(function(i){ return DB.paper(i).then(function(d){ return [i, d]; }).catch(function(){ return [i, null]; }); })).then(function(pairs){
       var papers = {}; pairs.forEach(function(p){ papers[p[0]] = p[1]; });
-      var filt = $('mfilter'), current = 'all';
-      function draw(){
-        list.innerHTML = ''; var shown = 0;
-        ms.forEach(function(m){
-          if(current !== 'all' && m.part !== current) return;
-          var paper = papers[m.paper_id]; if(!paper) return;
-          var t = paper.tests[0], p = t[m.part], it = p && p.items.find(function(x){ return x.q === m.q; }); if(!it) return;
-          list.appendChild(card(m, t, p, it)); shown++;
-        });
-        if(!shown) list.appendChild(el('p', 'empty', 'Nothing in this part.'));
-      }
-      [['all', 'All'], ['part1', 'Part 1'], ['part2', 'Part 2'], ['part3', 'Part 3'], ['part4', 'Part 4']].forEach(function(f){
-        var n = f[0] === 'all' ? ms.length : ms.filter(function(m){ return m.part === f[0]; }).length;
-        if(f[0] !== 'all' && !n) return;
-        var b = el('button', 'btn small', f[1] + ' (' + n + ')'); b.type = 'button'; b.setAttribute('aria-pressed', f[0] === current ? 'true' : 'false');
-        if(f[0] === current) b.classList.add('main');
-        b.addEventListener('click', function(){ current = f[0]; Array.prototype.forEach.call(filt.children, function(x){ x.classList.remove('main'); x.setAttribute('aria-pressed', 'false'); }); b.classList.add('main'); b.setAttribute('aria-pressed', 'true'); draw(); });
-        filt.appendChild(b);
+      /* keep only mistakes whose paper and question can still be opened */
+      var rows = [];
+      ms.forEach(function(m){
+        var paper = papers[m.paper_id]; if(!paper) return;
+        var t = paper.tests[0], p = t[m.part], it = p && p.items.find(function(x){ return x.q === m.q; }); if(!it) return;
+        rows.push({m: m, t: t, p: p, it: it, level: packOf(m.paper_id), topic: topicOf(m.part, it), done: false});
       });
+      var want = (qs('level') || '').toLowerCase();
+      var F = {level: rows.some(function(r){ return r.level === want; }) ? want : 'all', part: 'all', topic: 'all'};
+      var sum = $('msum'), weak = $('mweak'), filt = $('mfilter');
+      function left(){ return rows.filter(function(r){ return !r.done; }); }
+      function match(r, skip){
+        return !r.done && (skip === 'level' || F.level === 'all' || r.level === F.level) && (skip === 'part' || F.part === 'all' || r.m.part === F.part)
+          && (skip === 'topic' || F.topic === 'all' || r.m.part + '|' + r.topic === F.topic);
+      }
+      function chip(label, n, on, fn){
+        var b = el('button', 'btn small' + (on ? ' main' : ''), label + ' (' + n + ')'); b.type = 'button'; b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        b.addEventListener('click', fn); return b;
+      }
+      function summary(){
+        var todo = left().length, got = fixed + rows.length - todo, total = todo + got;
+        sum.textContent = ''; sum.hidden = false;
+        var line = el('p', 'msum-line'); line.appendChild(el('b', null, String(todo))); line.appendChild(document.createTextNode(todo === 1 ? ' mistake to fix' : ' mistakes to fix'));
+        line.appendChild(el('span', 'muted', '  ·  ' + got + ' fixed so far'));
+        sum.appendChild(line);
+        var tr = el('div', 'track'); tr.setAttribute('role', 'img'); tr.setAttribute('aria-label', got + ' of ' + total + ' mistakes fixed');
+        var f = el('b'); f.style.width = (total ? 100 * got / total : 0) + '%'; tr.appendChild(f); sum.appendChild(tr);
+      }
+      function weakSpots(){
+        weak.textContent = '';
+        var c = {}; left().forEach(function(r){ if(r.m.part === 'part4' || (F.level !== 'all' && r.level !== F.level)) return; var k = r.m.part + '|' + r.topic; c[k] = (c[k] || 0) + 1; });
+        var top = Object.keys(c).filter(function(k){ return c[k] > 1 || k === F.topic; }).sort(function(x, y){ return c[y] - c[x]; }).slice(0, 6);
+        weak.hidden = !top.length; if(!top.length){ F.topic = 'all'; return; }
+        weak.appendChild(el('h2', null, 'Your weak spots'));
+        weak.appendChild(el('p', 'muted small', 'The kinds of question you miss most often. Pick one to practise just those.'));
+        var row = el('div', 'cta');
+        top.forEach(function(k){
+          var bits = k.split('|');
+          row.appendChild(chip(bits[1] + ' · ' + bits[0].replace('part', 'Part '), c[k], F.topic === k, function(){ F.topic = F.topic === k ? 'all' : k; draw(); }));
+        });
+        weak.appendChild(row);
+      }
+      function filters(){
+        filt.textContent = '';
+        var levels = Array.from(new Set(left().map(function(r){ return r.level; }))).sort();
+        if(levels.length > 1){
+          var g = el('div', 'cta'); g.setAttribute('role', 'group'); g.setAttribute('aria-label', 'Level');
+          g.appendChild(chip('All levels', left().filter(function(r){ return match(r, 'level'); }).length, F.level === 'all', function(){ F.level = 'all'; F.topic = 'all'; draw(); }));
+          levels.forEach(function(L){ g.appendChild(chip(L.toUpperCase(), left().filter(function(r){ return r.level === L && match(r, 'level'); }).length, F.level === L, function(){ F.level = L; F.topic = 'all'; draw(); })); });
+          filt.appendChild(g);
+        }
+        var g2 = el('div', 'cta'); g2.setAttribute('role', 'group'); g2.setAttribute('aria-label', 'Part');
+        g2.appendChild(chip('All parts', left().filter(function(r){ return match(r, 'part'); }).length, F.part === 'all', function(){ F.part = 'all'; draw(); }));
+        PKS.forEach(function(pk, j){
+          var n = left().filter(function(r){ return r.m.part === pk && match(r, 'part'); }).length; if(!n && F.part !== pk) return;
+          g2.appendChild(chip('Part ' + (j + 1), n, F.part === pk, function(){ F.part = pk; draw(); }));
+        });
+        filt.appendChild(g2);
+      }
+      function draw(){
+        $('mreview').hidden = false; summary(); weakSpots(); filters();
+        list.innerHTML = ''; var shown = 0;
+        rows.forEach(function(r){
+          if(!match(r)) return;
+          list.appendChild(card(r.m, r.t, r.p, r.it, function(){ r.done = true; summary(); })); shown++;
+        });
+        if(!shown) list.appendChild(el('p', 'empty', left().length ? 'Nothing here. Try another filter.' : 'All fixed. Nothing left to review.'));
+      }
       draw();
     });
   }).catch(function(e){ list.innerHTML = ''; list.appendChild(el('p', 'msg err', 'Your mistakes could not be loaded. Check your connection and refresh.')); console.error(e); });
 }
-function card(m, t, p, it){
+function card(m, t, p, it, onFixed){
   var pk = m.part, box = el('div', 'mist');
   box.appendChild(el('div', 'meta', packOf(m.paper_id).toUpperCase() + ' ' + (t.name || 'Paper') + ' · ' + pk.replace('part', 'Part ') + ' · question ' + it.q + (p.title ? ' · ' + p.title : '')));
   var ctx = el('div', 'ctx'), input = null, choice = null;
@@ -299,7 +478,7 @@ function card(m, t, p, it){
     if(!String(v).trim()){ if(input) input.focus(); return; }
     var ok = accepted(pk, it).some(function(a){ return norm(a) === norm(v); });
     reveal(ok);
-    if(ok){ DB.resolve(m.paper_id, it.q); chk.disabled = true; box.style.opacity = '.6'; }
+    if(ok){ DB.resolve(m.paper_id, it.q); chk.disabled = true; box.style.opacity = '.6'; if(onFixed) onFixed(); }
   });
   show.addEventListener('click', function(){ reveal(false); });
   if(input) input.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); chk.click(); } });

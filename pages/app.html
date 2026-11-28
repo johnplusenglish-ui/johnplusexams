@@ -21,16 +21,14 @@ head: <meta name="robots" content="noindex">
     <div><p class="eyebrow" id="who"></p><h1 style="font-size:clamp(1.8rem,5vw,2.4rem)">My papers</h1></div>
     <div class="cta"><a class="btn" href="/app/mistakes.html">My Mistakes <span id="mcount"></span></a><button class="btn small" id="signout" type="button">Sign out</button></div>
   </div>
-  <div class="stats" id="stats"></div>
   <div id="noaccess" class="sheet" hidden>
     <h2 style="font-size:1.3rem;margin-bottom:8px">No active pack on this email</h2>
     <p class="muted" id="noaccess-text">If you've just paid, wait a minute and refresh. Make sure you signed in with the email you used at checkout.</p>
     <div class="cta" style="margin-top:14px"><a class="btn main" href="/c1-use-of-english/#pricing">Get the C1 pack</a><a class="btn" href="/sample/c1-use-of-english.html">Free paper</a></div>
   </div>
-  <div id="packs" class="stack"></div>
-  <section id="pdfsec" hidden aria-labelledby="pdfh">
-    <div class="sheet-head"><h2 id="pdfh" style="font-size:1.3rem">PDFs to print</h2><span class="lv">one part per A4 page</span></div>
-    <div class="sheet"><div id="pdflist" class="stack" style="gap:8px"></div></div>
-  </section>
+  <div id="lvwrap" class="stack" hidden>
+    <div id="lvtabs" class="lvtabs" role="tablist" aria-label="Level"></div>
+    <div id="lvpanel" role="tabpanel"></div>
+  </div>
 </div>
 <p id="demo-note" class="note" style="margin-top:18px" hidden>Demo mode: this is a local preview. Nothing is saved online until Supabase is connected.</p>

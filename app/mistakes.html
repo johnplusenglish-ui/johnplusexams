@@ -36,8 +36,12 @@
 <main id="main" class="wrap">
 <div class="stack">
   <div class="sec-head" style="max-width:none;flex-direction:row;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px">
-    <div><p class="eyebrow"><a href="/app/" style="text-decoration:none">&larr; My papers</a></p><h1 style="font-size:clamp(1.8rem,5vw,2.4rem)">My Mistakes</h1><p class="muted" style="margin-top:6px">Every question you got wrong. Try it again: get it right and it leaves the list.</p></div>
-    <div class="cta" id="mfilter" role="group" aria-label="Show part"></div>
+    <div><p class="eyebrow"><a href="/app/" style="text-decoration:none">&larr; My papers</a></p><h1 style="font-size:clamp(1.8rem,5vw,2.4rem)">My Mistakes</h1><p class="muted" style="margin-top:6px">Every question you got wrong, sorted so you can see what to work on. Get one right and it leaves the list.</p></div>
+  </div>
+  <div class="sheet mreview" id="mreview" hidden>
+    <div id="msum" hidden></div>
+    <div id="mweak" hidden></div>
+    <div id="mfilter" class="mfilters"></div>
   </div>
   <div class="sheet" id="mlist" aria-live="polite"><p class="empty">Loading your mistakes...</p></div>
 </div>
