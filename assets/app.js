@@ -232,6 +232,93 @@ function pdfRows(S){
   });
   return box;
 }
+/* Download several PDFs at once: as one ZIP, or joined into one PDF to print. The libraries load only when needed. */
+var LIBS = {zip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js', pdf: 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js'};
+function lib(k){
+  if(k === 'zip' && window.JSZip) return Promise.resolve(window.JSZip);
+  if(k === 'pdf' && window.PDFLib) return Promise.resolve(window.PDFLib);
+  return new Promise(function(ok, no){ var sc = document.createElement('script'); sc.src = LIBS[k]; sc.onload = function(){ ok(k === 'zip' ? window.JSZip : window.PDFLib); }; sc.onerror = no; document.head.appendChild(sc); });
+}
+function saveBlob(blob, name){
+  var u = URL.createObjectURL(blob), a = el('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(u); }, 60000);
+}
+function pdfBatch(S){
+  var pack = S.pack, papers = S.papers.filter(function(P){ return P.row.pdf_student || P.row.pdf_teacher; });
+  var box = el('div', 'batch'), pick = {}, kind = 'pdf_student', joined = false;
+  box.appendChild(el('h3', null, 'Download several at once'));
+  var quick = el('div', 'batch-row'); quick.appendChild(el('span', 'blab', 'Select'));
+  var grid = el('div', 'batch-grid'), boxes = [];
+  papers.forEach(function(P, i){
+    var l = el('label', 'bpick'), c = el('input'); c.type = 'checkbox'; c.value = String(i);
+    c.addEventListener('change', function(){ pick[i] = c.checked; sync(); });
+    l.appendChild(c); l.appendChild(el('span', null, 'Paper ' + P.n)); l.title = P.row.title;
+    grid.appendChild(l); boxes.push(c);
+  });
+  function setRange(from, n){ boxes.forEach(function(c, i){ c.checked = i >= from && i < from + n; pick[i] = c.checked; }); sync(); }
+  /* 2, 3, 5, 10: the next papers after the ones already picked, so pressing 5 twice gives papers 1 to 5, then 6 to 10 */
+  [2, 3, 5, 10].forEach(function(n){
+    if(n >= papers.length) return;
+    var b = el('button', 'btn small', String(n)); b.type = 'button'; b.setAttribute('aria-label', 'Select the next ' + n + ' papers');
+    b.addEventListener('click', function(){
+      var last = -1; boxes.forEach(function(c, i){ if(c.checked) last = i; });
+      var from = last + 1 >= papers.length ? 0 : last + 1; setRange(from, n);
+    });
+    quick.appendChild(b);
+  });
+  var all = el('button', 'btn small', 'All ' + papers.length); all.type = 'button'; all.addEventListener('click', function(){ setRange(0, papers.length); }); quick.appendChild(all);
+  var none = el('button', 'btn small', 'Clear'); none.type = 'button'; none.addEventListener('click', function(){ setRange(0, 0); }); quick.appendChild(none);
+  box.appendChild(quick); box.appendChild(grid);
+  function radios(label, opts, on){
+    var g = el('div', 'batch-row'); g.setAttribute('role', 'radiogroup'); g.setAttribute('aria-label', label); g.appendChild(el('span', 'blab', label));
+    opts.forEach(function(o, i){
+      var b = el('button', 'btn small' + (i === 0 ? ' main' : ''), o[1]); b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+      b.addEventListener('click', function(){ Array.prototype.forEach.call(g.querySelectorAll('button'), function(x){ x.classList.remove('main'); x.setAttribute('aria-checked', 'false'); }); b.classList.add('main'); b.setAttribute('aria-checked', 'true'); on(o[0]); sync(); });
+      g.appendChild(b);
+    });
+    return g;
+  }
+  box.appendChild(radios('Which', [['pdf_student', 'Student'], ['pdf_teacher', 'Answer key'], ['both', 'Both']], function(v){ kind = v; }));
+  box.appendChild(radios('As', [[false, 'ZIP of separate PDFs'], [true, 'One PDF to print']], function(v){ joined = v; }));
+  var go = el('button', 'btn main', ''); go.type = 'button'; var msg = el('p', 'small muted'); msg.setAttribute('aria-live', 'polite');
+  var act = el('div', 'batch-row'); act.appendChild(go); act.appendChild(msg); box.appendChild(act);
+  function files(){
+    var out = [];
+    papers.forEach(function(P, i){
+      if(!pick[i]) return;
+      (kind === 'both' ? ['pdf_student', 'pdf_teacher'] : [kind]).forEach(function(k){ if(P.row[k]) out.push({P: P, path: P.row[k], k: k}); });
+    });
+    return out;
+  }
+  function sync(){
+    var f = files(), n = f.length;
+    go.disabled = !n; go.textContent = n ? 'Download ' + n + (n === 1 ? ' PDF' : ' PDFs') : 'Pick some papers';
+  }
+  go.addEventListener('click', function(){
+    var f = files(); if(!f.length) return;
+    var nums = f.map(function(x){ return x.P.n; }), lo = Math.min.apply(null, nums), hi = Math.max.apply(null, nums);
+    var base = 'johnplusexams-' + pack + '-paper' + (lo === hi ? '-' + lo : 's-' + lo + '-' + hi) + (kind === 'both' ? '' : (kind === 'pdf_student' ? '-student' : '-answer-key'));
+    go.disabled = true; msg.textContent = 'Getting the PDFs...';
+    Promise.all([lib(joined ? 'pdf' : 'zip')].concat(f.map(function(x){
+      return DB.pdf(x.path).then(function(u){ return fetch(u); }).then(function(r){ if(!r.ok) throw new Error('fetch'); return r.arrayBuffer(); });
+    }))).then(function(r){
+      var L = r[0], bufs = r.slice(1);
+      msg.textContent = joined ? 'Joining them into one file...' : 'Zipping...';
+      if(joined){
+        return L.PDFDocument.create().then(function(out){
+          return bufs.reduce(function(chain, b){
+            return chain.then(function(){ return L.PDFDocument.load(b); }).then(function(src){ return out.copyPages(src, src.getPageIndices()); }).then(function(pages){ pages.forEach(function(pg){ out.addPage(pg); }); });
+          }, Promise.resolve()).then(function(){ return out.save(); });
+        }).then(function(bytes){ saveBlob(new Blob([bytes], {type: 'application/pdf'}), base + '.pdf'); });
+      }
+      var z = new L();
+      f.forEach(function(x, i){ z.file(pack + '-paper-' + String(x.P.n).padStart(2, '0') + (x.k === 'pdf_student' ? '-student' : '-answer-key') + '.pdf', bufs[i]); });
+      return z.generateAsync({type: 'blob'}).then(function(b){ saveBlob(b, base + '.zip'); });
+    }).then(function(){ msg.textContent = 'Done. Check your downloads.'; }).catch(function(e){ console.error(e); msg.textContent = 'Something went wrong. Try fewer papers, or try again in a moment.'; }).then(function(){ sync(); });
+  });
+  sync();
+  return box;
+}
 function levelPanel(S, acc){
   var pack = S.pack, panel = el('div', 'stack');
   var stats = el('div', 'stats');
@@ -254,7 +341,7 @@ function levelPanel(S, acc){
   if(S.papers.some(function(P){ return P.row.pdf_student || P.row.pdf_teacher; })){
     var det = el('details', 'sheet pdfs'); det.appendChild(el('summary', null, 'PDFs to print (' + PACKS[pack].level + ')'));
     det.appendChild(el('p', 'muted small', 'One part per A4 page. The answer key PDF has the explanations.'));
-    det.appendChild(pdfRows(S)); panel.appendChild(det);
+    det.appendChild(pdfBatch(S)); det.appendChild(el('h3', 'one-by-one', 'One at a time')); det.appendChild(pdfRows(S)); panel.appendChild(det);
   }
   return panel;
 }
