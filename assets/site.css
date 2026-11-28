@@ -268,7 +268,7 @@ a.stat:hover b{color:var(--sky-d)}
 .pdfs .one-by-one{margin:0 0 10px}
 .batch-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .blab{font-size:.85rem;font-weight:600;min-width:3.5rem}
-.batch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
-.bpick{display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.875rem;cursor:pointer;min-height:40px}
+.batch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px}
+.bpick{white-space:nowrap;display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.875rem;cursor:pointer;min-height:40px}
 .bpick:has(input:checked){border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .bpick input{width:18px;height:18px;margin:0;accent-color:var(--ink)}

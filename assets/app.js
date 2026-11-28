@@ -284,9 +284,9 @@ function pdfBatch(S){
   var act = el('div', 'batch-row'); act.appendChild(go); act.appendChild(msg); box.appendChild(act);
   function files(){
     var out = [];
-    papers.forEach(function(P, i){
-      if(!pick[i]) return;
-      (kind === 'both' ? ['pdf_student', 'pdf_teacher'] : [kind]).forEach(function(k){ if(P.row[k]) out.push({P: P, path: P.row[k], k: k}); });
+    /* students first, then answer keys: a joined PDF prints the class set in one go, keys at the end */
+    (kind === 'both' ? ['pdf_student', 'pdf_teacher'] : [kind]).forEach(function(k){
+      papers.forEach(function(P, i){ if(pick[i] && P.row[k]) out.push({P: P, path: P.row[k], k: k}); });
     });
     return out;
   }
