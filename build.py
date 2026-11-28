@@ -12,7 +12,7 @@ Each file in pages/ starts with a front-matter block:
 ---
 <html body content>
 """
-import os, re, glob
+import os, re, glob, hashlib
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = "https://johnplusexams.com"
@@ -121,6 +121,14 @@ def build_reader():
     engine = engine.replace(hook, hook.replace("    return [sub, pm];",
         "    try{ window.dispatchEvent(new CustomEvent('uoe:part-checked', {detail:{pk:pk, test:cur(), sub:sub, max:pm, marks:marks}})); }catch(e){}\n    return [sub, pm];"))
     open(os.path.join(ROOT, "assets/paper-engine.js"), "w", encoding="utf-8").write("/* Built from src/paper_template.html by build.py. Do not edit by hand. */\n" + engine)
+    # app.js loads the engine after sign-in; stamp its URL with a version so browsers fetch a new engine at once
+    ver = hashlib.md5(engine.encode("utf-8")).hexdigest()[:8]
+    ap = os.path.join(ROOT, "assets/app.js")
+    js = open(ap, encoding="utf-8").read()
+    js2 = re.sub(r"/assets/paper-engine\.js(\?v=\w+)?'", "/assets/paper-engine.js?v=%s'" % ver, js)
+    assert "paper-engine.js?v=" in js2, "engine URL not found in app.js"
+    if js2 != js:
+        open(ap, "w", encoding="utf-8").write(js2)
     page = t[:i] + ('<script src="%s"></script>\n<script src="/assets/config.js"></script>\n<script src="/assets/app.js"></script>\n' % SUPABASE_JS) + t[j + len("</script>"):]
     page = page.replace("__TITLE__", "Your paper · johnplusexams")
     gate = ('<main>\n  <div class="jpx-bar"><a href="/app/">&larr; My papers</a><a href="/app/mistakes.html">My Mistakes</a></div>\n'
